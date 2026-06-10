@@ -10,7 +10,6 @@ import ProductPage from "@/pages/product";
 import SearchPage from "@/pages/search";
 import CartPage from "@/pages/cart";
 import CheckoutPage from "@/pages/checkout";
-import OrdersPage from "@/pages/orders";
 import OrderDetailPage from "@/pages/order-detail";
 import TrackPage from "@/pages/track";
 import WishlistPage from "@/pages/wishlist";
@@ -38,7 +37,6 @@ function Router() {
         <Route path="/search" component={SearchPage} />
         <Route path="/cart" component={CartPage} />
         <Route path="/checkout" component={CheckoutPage} />
-        <Route path="/orders" component={OrdersPage} />
         <Route path="/orders/:id" component={OrderDetailPage} />
         <Route path="/track" component={TrackPage} />
         <Route path="/wishlist" component={WishlistPage} />

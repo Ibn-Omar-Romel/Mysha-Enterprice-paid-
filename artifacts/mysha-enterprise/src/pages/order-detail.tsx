@@ -74,8 +74,8 @@ export default function OrderDetailPage() {
     return (
       <div className="container mx-auto px-4 py-24 text-center max-w-lg">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Order Not Found</h2>
-        <Link href="/orders">
-          <Button>Back to Orders</Button>
+        <Link href="/">
+          <Button>Back to Home</Button>
         </Link>
       </div>
     );
@@ -85,11 +85,6 @@ export default function OrderDetailPage() {
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="container mx-auto px-4 max-w-5xl">
         <div className="mb-6 flex items-center gap-4">
-          <Link href="/orders">
-            <Button variant="outline" size="icon" className="rounded-full">
-              <ArrowLeft size={18} />
-            </Button>
-          </Link>
           <h1 className="text-2xl font-bold text-gray-900">Order #{order.id}</h1>
           <div className="ml-auto">{getStatusBadge(order.status)}</div>
         </div>
