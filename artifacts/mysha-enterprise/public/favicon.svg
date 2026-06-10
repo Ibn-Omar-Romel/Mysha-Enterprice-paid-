@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Rounded background -->
+  <rect width="64" height="64" rx="14" fill="#FF3C00"/>
+
+  <!-- Left vertical bar -->
+  <rect x="10" y="14" width="8" height="36" rx="2" fill="white"/>
+  <!-- Right vertical bar -->
+  <rect x="46" y="14" width="8" height="36" rx="2" fill="white"/>
+  <!-- Left diagonal (top-left to center-top) -->
+  <polygon points="10,14 18,14 32,30 26,36" fill="white"/>
+  <!-- Right diagonal (top-right to center-top) -->
+  <polygon points="54,14 46,14 32,30 38,36" fill="white"/>
+</svg>

@@ -1,0 +1,10 @@
+# Build artifacts and local-only files that should not be uploaded to Vercel.
+node_modules
+**/node_modules
+**/dist
+.git
+.qodo
+attached_assets
+artifacts/mockup-sandbox
+*.env
+.env

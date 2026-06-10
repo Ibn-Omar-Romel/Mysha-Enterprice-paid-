@@ -1,0 +1,28 @@
+# System Files
+.DS_Store
+Thumbs.db
+
+# Replit
+.cache/
+.local/
+.replit-artifact/
+attached_assets/
+artifacts/mockup-sandbox/
+
+# Environment files
+.env
+*.env
+
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build output
+dist/
+**/dist/
+build/
+**/build/
+*.tsbuildinfo
+
+# Vercel
+.vercel
