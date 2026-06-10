@@ -54,30 +54,39 @@ async function sendVerificationEmail(to: string, code: string, type: "signup" | 
     </div>
   `;
 
-  // Send via Resend's HTTP API. This works on serverless hosts like Vercel,
-  // which block/abort raw SMTP connections. EMAIL_FROM defaults to Resend's
-  // shared test sender; set it to a verified-domain address for production.
+  // Send via Resend's HTTP API. EMAIL_FROM defaults to Resend's shared test
+  // sender, which can only deliver to your own Resend account address until you
+  // verify a domain.
   const apiKey = process.env["RESEND_API_KEY"];
   const from = process.env["EMAIL_FROM"] || "Mysha Enterprise <onboarding@resend.dev>";
 
+  // When true, the 6-digit code is returned in the API response (shown on the
+  // screen) so the flow works before real email is set up. Enabled outside
+  // production, or explicitly via SHOW_VERIFICATION_CODE=true. Turn this OFF
+  // once you've verified a sending domain in Resend, so codes only go by email.
+  const exposeCode =
+    process.env["SHOW_VERIFICATION_CODE"] === "true" ||
+    process.env.NODE_ENV !== "production";
+
   if (apiKey) {
-    const resend = new Resend(apiKey);
-    const { error } = await resend.emails.send({ from, to, subject, html });
-    if (error) {
-      throw new Error(`Failed to send email: ${error.message}`);
+    try {
+      const resend = new Resend(apiKey);
+      const { error } = await resend.emails.send({ from, to, subject, html });
+      if (error) throw new Error(error.message ?? "Email send failed");
+    } catch (err) {
+      // Email failed (commonly: Resend test mode only delivers to your own
+      // address). If we're allowed to expose the code, keep going so signup
+      // still completes; otherwise surface the failure.
+      if (!exposeCode) throw err;
+      console.error("[auth] Email send failed; using on-screen code instead:", err);
     }
-    return null;
+    return exposeCode ? code : null;
   }
 
-  // No email provider configured. In production this is a misconfiguration and
-  // we must NEVER return the code to the client — fail loudly instead.
-  if (process.env.NODE_ENV === "production") {
-    throw new Error(
-      "Email delivery is not configured (RESEND_API_KEY missing)."
-    );
+  // No email provider configured.
+  if (!exposeCode) {
+    throw new Error("Email delivery is not configured (RESEND_API_KEY missing).");
   }
-
-  // Development only: surface the code so testing without a provider is possible.
   return code;
 }
 
