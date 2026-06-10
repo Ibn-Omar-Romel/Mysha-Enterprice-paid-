@@ -60,33 +60,24 @@ async function sendVerificationEmail(to: string, code: string, type: "signup" | 
   const apiKey = process.env["RESEND_API_KEY"];
   const from = process.env["EMAIL_FROM"] || "Mysha Enterprise <onboarding@resend.dev>";
 
-  // When true, the 6-digit code is returned in the API response (shown on the
-  // screen) so the flow works before real email is set up. Enabled outside
-  // production, or explicitly via SHOW_VERIFICATION_CODE=true. Turn this OFF
-  // once you've verified a sending domain in Resend, so codes only go by email.
-  const exposeCode =
-    process.env["SHOW_VERIFICATION_CODE"] === "true" ||
-    process.env.NODE_ENV !== "production";
-
   if (apiKey) {
     try {
       const resend = new Resend(apiKey);
       const { error } = await resend.emails.send({ from, to, subject, html });
       if (error) throw new Error(error.message ?? "Email send failed");
+      // Email delivered. Hide the code (unless explicitly exposed for testing).
+      return process.env["SHOW_VERIFICATION_CODE"] === "true" ? code : null;
     } catch (err) {
-      // Email failed (commonly: Resend test mode only delivers to your own
-      // address). If we're allowed to expose the code, keep going so signup
-      // still completes; otherwise surface the failure.
-      if (!exposeCode) throw err;
-      console.error("[auth] Email send failed; using on-screen code instead:", err);
+      // Email could not be delivered — most commonly because Resend's test
+      // sender only delivers to your own address until you verify a domain.
+      // Fall back to returning the code so sign-up still works. Once you verify
+      // a sending domain in Resend, real emails go out and this stops happening.
+      console.error("[auth] Email send failed; returning code to client instead:", err);
+      return code;
     }
-    return exposeCode ? code : null;
   }
 
-  // No email provider configured.
-  if (!exposeCode) {
-    throw new Error("Email delivery is not configured (RESEND_API_KEY missing).");
-  }
+  // No email provider configured at all → return the code so the flow works.
   return code;
 }
 
