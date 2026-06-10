@@ -10,8 +10,9 @@ import { toArray } from "@/lib/data";
 export default function WishlistPage() {
   const { wishlistIds, clearWishlist, count } = useWishlist();
 
+  // Fetch a large page so wishlisted items beyond the first 24 are found too.
   const { data: allProductsRaw, isLoading } = useListProducts(
-    {},
+    { limit: 1000 },
     { query: { enabled: wishlistIds.length > 0 } },
   );
 

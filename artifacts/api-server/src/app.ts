@@ -121,7 +121,10 @@ app.use(
     }),
     secret: SESSION_SECRET || "mysha-dev-secret",
     resave: false,
-    saveUninitialized: false, // false = don't create session until something is stored
+    // true so every visitor gets a session cookie immediately. The guest cart
+    // is keyed by the session id, so without this the cookie is never set and
+    // the cart can't persist across requests.
+    saveUninitialized: true,
     cookie: {
       // false in development so the cookie is sent over HTTP through the Vite
       // proxy; true in production so the cookie is only sent over HTTPS.
