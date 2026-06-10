@@ -114,6 +114,7 @@ export default function CheckoutPage() {
 
   const [isSuccess, setIsSuccess] = useState(false);
   const [orderId, setOrderId] = useState<number | null>(null);
+  const [orderToken, setOrderToken] = useState<string | null>(null);
   const [couponInput, setCouponInput] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState<CouponResult | null>(null);
@@ -224,6 +225,7 @@ export default function CheckoutPage() {
       {
         onSuccess: (order) => {
           setOrderId(order.id);
+          setOrderToken((order as any).token ?? String(order.id));
           setIsSuccess(true);
           queryClient.invalidateQueries({ queryKey: getGetCartQueryKey() });
           queryClient.invalidateQueries({ queryKey: getListOrdersQueryKey() });
@@ -281,11 +283,11 @@ export default function CheckoutPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href={`/orders/${orderId}`}>
+            <Link href={`/orders/${orderToken}`}>
               <Button
                 variant="outline"
                 className="w-full sm:w-auto h-12 px-8"
-                onClick={() => setLocation(`/orders/${orderId}`)}
+                onClick={() => setLocation(`/orders/${orderToken}`)}
               >
                 <Package size={16} className="mr-2" /> View Order
               </Button>

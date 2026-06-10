@@ -1,12 +1,43 @@
 import { Router } from "express";
+import crypto from "node:crypto";
 import { z } from "zod";
 import { db } from "@workspace/db";
 import { ordersTable, cartItemsTable } from "@workspace/db";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { validateBody } from "../middlewares/validate";
 import { applyCoupon } from "../lib/coupons";
 
 const router = Router();
+
+// ─── Unguessable order links ────────────────────────────────────────────────────
+// Order URLs use a signed token "<id>-<signature>", where the signature is an
+// HMAC of the id with the server secret. A plain or altered id won't verify, so
+// orders can't be opened by guessing the number.
+const ORDER_SECRET = process.env["SESSION_SECRET"] || "mysha-dev-secret";
+
+function signOrderId(id: number): string {
+  return crypto.createHmac("sha256", ORDER_SECRET).update(String(id)).digest("hex").slice(0, 24);
+}
+
+function orderToken(id: number): string {
+  return `${id}-${signOrderId(id)}`;
+}
+
+function verifyOrderToken(token: string): number | null {
+  const dash = token.lastIndexOf("-");
+  if (dash <= 0) return null;
+  const id = parseInt(token.slice(0, dash), 10);
+  const sig = token.slice(dash + 1);
+  if (Number.isNaN(id)) return null;
+  const expected = signOrderId(id);
+  if (sig.length !== expected.length) return null;
+  try {
+    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
+  } catch {
+    return null;
+  }
+  return id;
+}
 
 // ─── Validation ───────────────────────────────────────────────────────────────
 const addressSchema = z.object({
@@ -29,6 +60,7 @@ type CreateOrderInput = z.infer<typeof createOrderSchema>;
 function formatOrder(o: typeof ordersTable.$inferSelect) {
   return {
     id: o.id,
+    token: orderToken(o.id),
     items: (o.items as Array<{ productId: number; name: string; price: number; quantity: number; image: string; brand: string }>),
     total: parseFloat(o.total),
     status: o.status,
@@ -112,15 +144,13 @@ router.get("/orders/by-phone", async (req, res) => {
   }
 });
 
+// Look up a single order by its signed token. The signature must verify, so a
+// plain or altered id (e.g. /orders/1, /orders/2) returns "not found".
 router.get("/orders/:id", async (req, res) => {
   try {
-    const id = parseInt(String(req.params.id), 10);
-    if (Number.isNaN(id)) return void res.status(400).json({ error: "Invalid order ID" });
-    // Scope to the caller's own session so orders cannot be read by guessing IDs (IDOR).
-    const [order] = await db
-      .select()
-      .from(ordersTable)
-      .where(and(eq(ordersTable.id, id), eq(ordersTable.sessionId, req.session.id)));
+    const id = verifyOrderToken(String(req.params.id));
+    if (id === null) return void res.status(404).json({ error: "Order not found" });
+    const [order] = await db.select().from(ordersTable).where(eq(ordersTable.id, id));
     if (!order) return void res.status(404).json({ error: "Order not found" });
     res.json(formatOrder(order));
   } catch (err) {

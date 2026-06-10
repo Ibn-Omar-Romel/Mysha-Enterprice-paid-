@@ -1,19 +1,27 @@
 import { useParams, Link } from "wouter";
-import { useGetOrder } from "@workspace/api-client-react";
 import { useQuery } from "@tanstack/react-query";
 import { formatBDT } from "@/lib/format";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Package, Truck, CreditCard, MapPin, CheckCircle2 } from "lucide-react";
+import { Package, Truck, CreditCard, MapPin, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 
 export default function OrderDetailPage() {
-  const { id } = useParams();
-  const orderId = parseInt(id || "0", 10);
-  
-  const { data: order, isLoading } = useGetOrder(orderId, {
-    query: { enabled: !!orderId }
+  const { id: token } = useParams();
+
+  // Fetch the order by its signed token (e.g. "7-ab12..."). An invalid/altered
+  // token returns "not found", so order links can't be opened by guessing.
+  const { data: order, isLoading } = useQuery<any>({
+    queryKey: ["order", token],
+    enabled: !!token,
+    queryFn: async () => {
+      const res = await fetch(`/api/orders/${encodeURIComponent(token!)}`, {
+        credentials: "include",
+      });
+      if (!res.ok) return null;
+      return res.json();
+    },
   });
 
   // All orders placed with the same phone number (previous + current).
@@ -30,7 +38,7 @@ export default function OrderDetailPage() {
       return (await res.json()) as any[];
     },
   });
-  const orderHistory = (phoneOrdersRaw ?? []).filter((o: any) => o.id !== orderId);
+  const orderHistory = (phoneOrdersRaw ?? []).filter((o: any) => o.id !== (order as any)?.id);
 
   const getStatusBadge = (status: string) => {
     switch (status.toLowerCase()) {
