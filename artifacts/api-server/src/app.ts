@@ -50,9 +50,27 @@ app.use(
 );
 
 // ─── Security headers ──────────────────────────────────────────────────────────
-// Sensible defaults: HSTS, no-sniff, frameguard, etc. CSP is left to the
-// frontend host since this service only serves JSON.
-app.use(helmet());
+// HSTS, no-sniff, frameguard, etc. This server also serves the storefront, so
+// the Content-Security-Policy must allow the resources the frontend needs:
+// product images from any HTTPS host, Google Fonts, and same-origin scripts.
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        // Inline styles are used by the UI libraries; styles also come from Google Fonts.
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+        // Product images are external HTTPS URLs (e.g. Unsplash); allow any HTTPS image.
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        frameAncestors: ["'self'"],
+      },
+    },
+  })
+);
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
 // credentials:true is required so the browser sends the session cookie.
