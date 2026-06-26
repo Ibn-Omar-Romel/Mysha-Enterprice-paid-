@@ -64,7 +64,14 @@ export function Footer() {
             <ul className="space-y-4 text-sm text-gray-400">
               <li className="flex gap-3">
                 <MapPinIcon />
-                <span>21 (Down Floor), Tota mia complex, Senpara Parbata, Mirpur-10, Dhaka-1216</span>
+                <a
+                  href="https://maps.app.goo.gl/dEaBhx8pbr1jpUJy5"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hover:text-primary transition-colors"
+                >
+                  21 (Down Floor), Tota mia complex, Senpara Parbata, Mirpur-10, Dhaka-1216
+                </a>
               </li>
               <li className="flex gap-3">
                 <PhoneIcon />
@@ -108,11 +115,17 @@ export function Footer() {
           <p className="text-sm text-gray-500">
             &copy; {new Date().getFullYear()} Mysha Enterprise. All rights reserved.
           </p>
-          <div className="flex gap-2">
-            <div className="h-8 w-12 bg-gray-800 rounded flex items-center justify-center text-xs font-bold">VISA</div>
-            <div className="h-8 w-12 bg-gray-800 rounded flex items-center justify-center text-xs font-bold">MC</div>
-            <div className="h-8 w-12 bg-[#e2136e] text-white rounded flex items-center justify-center text-xs font-bold">bKash</div>
-          </div>
+          <p className="text-sm text-gray-500">
+            Developed by{" "}
+            <a
+              href="https://www.linkedin.com/in/ibnomarromel/"
+              target="_blank"
+              rel="noreferrer"
+              className="text-primary font-medium hover:underline"
+            >
+              Ibn Omar Romel
+            </a>
+          </p>
         </div>
       </div>
     </footer>
