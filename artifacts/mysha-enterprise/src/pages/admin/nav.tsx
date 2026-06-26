@@ -1,10 +1,11 @@
 import { Link, useLocation } from "wouter";
-import { Package, ShoppingBag, Star } from "lucide-react";
+import { Package, ShoppingBag, Star, Upload } from "lucide-react";
 
 const TABS = [
   { href: "/admin", label: "Products", icon: Package, match: (l: string) => l === "/admin" || l.startsWith("/admin/products") },
   { href: "/admin/orders", label: "Orders", icon: ShoppingBag, match: (l: string) => l.startsWith("/admin/orders") },
   { href: "/admin/reviews", label: "Reviews", icon: Star, match: (l: string) => l.startsWith("/admin/reviews") },
+  { href: "/admin/import", label: "Import", icon: Upload, match: (l: string) => l.startsWith("/admin/import") },
 ];
 
 export function AdminNav() {

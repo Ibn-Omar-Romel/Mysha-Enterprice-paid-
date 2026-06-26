@@ -162,6 +162,39 @@ router.post("/admin/products", validateBody(productInputSchema), async (req: Req
   }
 });
 
+// ─── POST /api/admin/products/bulk ─── import many products at once ───────────
+// Validates each product independently so one bad row doesn't fail the batch.
+// Returns how many were created plus per-row errors. The frontend sends rows in
+// small batches to stay within the JSON body limit.
+router.post("/admin/products/bulk", async (req: Request, res: Response) => {
+  const body = req.body as { products?: unknown };
+  if (!body || !Array.isArray(body.products)) {
+    res.status(400).json({ error: "Expected { products: [...] }" });
+    return;
+  }
+  const rows = body.products.slice(0, 500);
+  const results = { created: 0, failed: [] as { row: number; name: string; error: string }[] };
+
+  for (let i = 0; i < rows.length; i++) {
+    const parsed = productInputSchema.safeParse(rows[i]);
+    const name = (rows[i] as any)?.name ?? `Row ${i + 1}`;
+    if (!parsed.success) {
+      const fe = parsed.error.flatten().fieldErrors;
+      const msg = Object.entries(fe).map(([k, v]) => `${k}: ${(v as string[]).join(", ")}`).join("; ");
+      results.failed.push({ row: i + 1, name, error: msg || "Invalid data" });
+      continue;
+    }
+    try {
+      await db.insert(productsTable).values(toRow(parsed.data));
+      results.created++;
+    } catch (err: any) {
+      results.failed.push({ row: i + 1, name, error: err?.message ?? "Insert failed" });
+    }
+  }
+
+  res.json(results);
+});
+
 // ─── PUT /api/admin/products/:id ─── update ────────────────────────────────────
 router.put("/admin/products/:id", validateBody(productInputSchema), async (req: Request, res: Response) => {
   const id = parseInt(String(req.params.id), 10);

@@ -172,6 +172,12 @@ export const adminApi = {
   remove: (id: number) =>
     jsonFetch<{ id: number }>(`/api/admin/products/${id}`, { method: "DELETE" }),
 
+  bulkCreate: (products: ProductInput[]) =>
+    jsonFetch<{ created: number; failed: { row: number; name: string; error: string }[] }>(
+      `/api/admin/products/bulk`,
+      { method: "POST", body: JSON.stringify({ products }) },
+    ),
+
   // Reviews
   listReviews: () => jsonFetch<{ reviews: AdminReview[] }>(`/api/admin/reviews`),
   deleteReview: (id: number) =>
