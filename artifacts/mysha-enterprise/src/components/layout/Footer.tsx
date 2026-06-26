@@ -1,5 +1,6 @@
 import { Link } from "wouter";
-import { FaFacebookF, FaInstagram, FaTiktok, FaYoutube } from "react-icons/fa";
+import { FaFacebookF, FaWhatsapp } from "react-icons/fa";
+import { OWNER_WHATSAPP } from "@/lib/config";
 export function Footer() {
   return (
     <footer className="bg-[#0d1117] text-gray-300 pt-16 pb-8 border-t border-gray-800">
@@ -16,7 +17,7 @@ export function Footer() {
             </div>
            <div className="flex items-center gap-4">
   <a
-    href="https://facebook.com"
+    href="https://www.facebook.com/share/1aMHmy474e/?mibextid=wwXIfr"
     target="_blank"
     rel="noreferrer"
     aria-label="Facebook"
@@ -26,36 +27,16 @@ export function Footer() {
   </a>
 
   <a
-    href="https://instagram.com"
+    href={`https://wa.me/${OWNER_WHATSAPP}`}
     target="_blank"
     rel="noreferrer"
-    aria-label="Instagram"
-    className="w-10 h-10 rounded-full bg-slate-800 hover:bg-orange-500 flex items-center justify-center text-white transition-colors"
+    aria-label="WhatsApp"
+    className="w-10 h-10 rounded-full bg-slate-800 hover:bg-green-600 flex items-center justify-center text-white transition-colors"
   >
-    <FaInstagram size={18} />
-  </a>
-
-  <a
-    href="https://tiktok.com"
-    target="_blank"
-    rel="noreferrer"
-    aria-label="TikTok"
-    className="w-10 h-10 rounded-full bg-slate-800 hover:bg-orange-500 flex items-center justify-center text-white transition-colors"
-  >
-    <FaTiktok size={18} />
-  </a>
-
-  <a
-    href="https://youtube.com"
-    target="_blank"
-    rel="noreferrer"
-    aria-label="YouTube"
-    className="w-10 h-10 rounded-full bg-slate-800 hover:bg-orange-500 flex items-center justify-center text-white transition-colors"
-  >
-    <FaYoutube size={18} />
+    <FaWhatsapp size={18} />
   </a>
 </div>
-          
+
           <div>
             <h3 className="text-white font-semibold mb-6 uppercase tracking-wider text-sm">Quick Links</h3>
             <ul className="space-y-3 text-sm">
@@ -83,11 +64,13 @@ export function Footer() {
             <ul className="space-y-4 text-sm text-gray-400">
               <li className="flex gap-3">
                 <MapPinIcon />
-                <span>123 Tech Avenue, Dhaka 1212, Bangladesh</span>
+                <span>21 (Down Floor), Tota mia complex, Senpara Parbata, Mirpur-10, Dhaka-1216</span>
               </li>
               <li className="flex gap-3">
                 <PhoneIcon />
-                <span>+880 1234-567890</span>
+                <a href={`https://wa.me/${OWNER_WHATSAPP}`} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
+                  +880 1633-800157 (WhatsApp)
+                </a>
               </li>
               <li className="flex gap-3">
                 <MailIcon />
@@ -96,7 +79,31 @@ export function Footer() {
             </ul>
           </div>
         </div>
-        
+
+        {/* ── Find us on the map ── */}
+        <div className="mb-12">
+          <h3 className="text-white font-semibold mb-4 uppercase tracking-wider text-sm">Find Us</h3>
+          <div className="rounded-xl overflow-hidden border border-gray-800">
+            <iframe
+              title="Mysha Enterprise location"
+              src="https://www.google.com/maps?q=Tota%20mia%20complex%2C%20Senpara%20Parbata%2C%20Mirpur-10%2C%20Dhaka-1216&output=embed"
+              width="100%"
+              height="260"
+              style={{ border: 0 }}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
+          </div>
+          <a
+            href="https://maps.app.goo.gl/dEaBhx8pbr1jpUJy5"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-block mt-3 text-sm text-primary hover:underline"
+          >
+            Open in Google Maps →
+          </a>
+        </div>
+
         <div className="pt-8 border-t border-gray-800 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-gray-500">
             &copy; {new Date().getFullYear()} Mysha Enterprise. All rights reserved.

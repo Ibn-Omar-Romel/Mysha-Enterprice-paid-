@@ -207,7 +207,9 @@ export default function CategoryPage() {
   // ── Filter / sort state ──────────────────────────────────────────────────
   const [priceRange,     setPriceRange]     = useState<[number, number]>([PRICE_MIN, PRICE_MAX]);
   const [committedPrice, setCommittedPrice] = useState<[number, number]>([PRICE_MIN, PRICE_MAX]);
-  const [sortBy,         setSortBy]         = useState("newest");
+  // "All Categories" highlights the highest-rated products first; a specific
+  // category shows its newest arrivals by default.
+  const [sortBy,         setSortBy]         = useState(isAll ? "rating" : "newest");
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [currentPage,    setCurrentPage]    = useState(1);
 
@@ -217,8 +219,8 @@ export default function CategoryPage() {
     setSelectedBrands([]);
     setPriceRange([PRICE_MIN, PRICE_MAX]);
     setCommittedPrice([PRICE_MIN, PRICE_MAX]);
-    setSortBy("newest");
-  }, [safeSlug, urlTag]);
+    setSortBy(isAll ? "rating" : "newest");
+  }, [safeSlug, urlTag, isAll]);
 
   // ── Category name ────────────────────────────────────────────────────────
   const { data: categoriesData } = useListCategories();

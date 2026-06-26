@@ -57,10 +57,19 @@ const createOrderSchema = z.object({
 });
 type CreateOrderInput = z.infer<typeof createOrderSchema>;
 
+// Short, human-friendly, hard-to-guess order code, e.g. "ME-7K2Q9D".
+function generateOrderCode(): string {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no confusing 0/O/1/I
+  let s = "";
+  for (let i = 0; i < 6; i++) s += alphabet[Math.floor(Math.random() * alphabet.length)];
+  return `ME-${s}`;
+}
+
 function formatOrder(o: typeof ordersTable.$inferSelect) {
   return {
     id: o.id,
     token: orderToken(o.id),
+    orderCode: o.orderCode ?? `ME-${o.id}`,
     items: (o.items as Array<{ productId: number; name: string; price: number; quantity: number; image: string; brand: string }>),
     total: parseFloat(o.total),
     status: o.status,
@@ -105,8 +114,10 @@ router.post("/orders", validateBody(createOrderSchema), async (req, res) => {
 
     const [order] = await db.insert(ordersTable).values({
       sessionId: req.session.id,
+      orderCode: generateOrderCode(),
       total: total.toString(),
-      status: "confirmed",
+      // New orders await admin confirmation.
+      status: "pending",
       shippingAddress,
       paymentMethod,
       items,

@@ -39,7 +39,6 @@ function toProduct(row: typeof productsTable.$inferSelect) {
     storageOptions: Array.isArray(row.storageOptions) ? row.storageOptions : [],
     specifications: Array.isArray(row.specifications) ? row.specifications : [],
     deliveryTime:   row.deliveryTime ?? "3-5 Days",
-    emiAvailable:   row.emiAvailable ?? true,
     whatsappNumber: row.whatsappNumber ?? null,
     createdAt:      row.createdAt?.toISOString() ?? null,
   };

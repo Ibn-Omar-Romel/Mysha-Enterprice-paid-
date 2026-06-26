@@ -6,6 +6,7 @@ import { formatBDT } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AdminGuard } from "./guard";
+import { AdminNav } from "./nav";
 import { toast } from "sonner";
 import {
   Plus, Pencil, Trash2, Search, Package, ExternalLink, LayoutDashboard,
@@ -45,6 +46,7 @@ function DashboardInner() {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="container mx-auto px-4 max-w-6xl">
+        <AdminNav />
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">

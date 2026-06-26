@@ -14,7 +14,7 @@ const SAMPLE = {
   name: "Google Pixel 9 Pro XL",
   brand: "Google",
   model: "Pixel 9 Pro XL",
-  category: "mobile",
+  category: "phones",
   code: "1-15",
   price: "78999",
   oldPrice: "105000",
@@ -33,10 +33,10 @@ const SAMPLE = {
     "https://images.unsplash.com/photo-1580910051074-3eb694886505?w=900&q=80",
   ],
   colors: [
-    { name: "Hazel", hex: "#9b9586" },
-    { name: "Obsidian", hex: "#1c1c1c" },
-    { name: "Porcelain", hex: "#ece9e2" },
-    { name: "Rose Quartz", hex: "#f6cdd6" },
+    { name: "Hazel", hex: "#9b9586", image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=900&q=80" },
+    { name: "Obsidian", hex: "#1c1c1c", image: "https://images.unsplash.com/photo-1592286927505-1def25e0c1c9?w=900&q=80" },
+    { name: "Porcelain", hex: "#ece9e2", image: "https://images.unsplash.com/photo-1580910051074-3eb694886505?w=900&q=80" },
+    { name: "Rose Quartz", hex: "#f6cdd6", image: "https://images.unsplash.com/photo-1574944985070-8f3ebc6b79d2?w=900&q=80" },
   ],
   storageOptions: [
     { label: "16/128GB", price: 78999, oldPrice: 105000, stock: 12 },
@@ -65,7 +65,6 @@ const SAMPLE = {
     { label: "Sensors", value: "Fingerprint (under display, ultrasonic), accelerometer, gyro, proximity, compass, barometer, thermometer (skin temperature) | Ultra Wideband (UWB) support | Satellite SOS service" },
   ],
   deliveryTime: "3-5 Days",
-  emiAvailable: true,
   whatsappNumber: null,
 };
 
@@ -77,7 +76,10 @@ async function main() {
     .limit(1);
 
   if (existing.length > 0) {
-    console.log(`Sample product already exists (id ${existing[0].id}). Nothing to do.`);
+    // Refresh the existing sample so updates (category, colour images, etc.)
+    // land on an already-seeded database without creating a duplicate.
+    await db.update(productsTable).set(SAMPLE as any).where(eq(productsTable.id, existing[0].id));
+    console.log(`Updated existing sample (id ${existing[0].id}). View it at /product/${existing[0].id}`);
     process.exit(0);
   }
 

@@ -5,7 +5,17 @@
 export interface ProductColor {
   name: string;
   hex?: string;
+  image?: string;
 }
+
+/** The store's real product categories (slug + display name). No "All Categories". */
+export const CATEGORY_OPTIONS: { slug: string; name: string }[] = [
+  { slug: "phones", name: "Phones" },
+  { slug: "tablets", name: "Tablets & Accessories" },
+  { slug: "laptops", name: "Computer & Laptops" },
+  { slug: "gadgets", name: "Gadgets & Accessories" },
+  { slug: "home-appliances", name: "Home Appliances" },
+];
 
 export interface ProductStorageOption {
   label: string;
@@ -41,7 +51,6 @@ export interface ProductDetail {
   storageOptions?: ProductStorageOption[];
   specifications?: ProductSpec[];
   deliveryTime?: string;
-  emiAvailable?: boolean;
   whatsappNumber?: string | null;
   createdAt?: string | null;
 }
@@ -67,7 +76,6 @@ export interface ProductInput {
   storageOptions?: ProductStorageOption[];
   specifications?: ProductSpec[];
   deliveryTime?: string;
-  emiAvailable?: boolean;
   whatsappNumber?: string;
 }
 
@@ -108,6 +116,43 @@ async function jsonFetch<T>(url: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export interface AdminReview {
+  id: number;
+  productId: number;
+  productName: string;
+  reviewerName: string;
+  rating: number;
+  comment: string;
+  helpfulCount: number;
+  verified: boolean;
+  createdAt?: string | null;
+}
+
+export const ORDER_STATUSES = ["pending", "confirmed", "processing", "packed", "delivered", "cancelled"] as const;
+export type OrderStatus = (typeof ORDER_STATUSES)[number];
+
+export interface AdminOrderItem {
+  name: string;
+  price: number;
+  quantity: number;
+  image: string;
+  brand: string;
+}
+
+export interface AdminOrder {
+  id: number;
+  orderCode: string;
+  status: OrderStatus;
+  total: number;
+  paymentMethod: string;
+  customerName: string;
+  customerPhone: string;
+  shippingAddress: Record<string, any>;
+  items: AdminOrderItem[];
+  notifiedAt?: string | null;
+  createdAt?: string | null;
+}
+
 export const adminApi = {
   list: (q?: string) =>
     jsonFetch<{ products: AdminProductListItem[] }>(
@@ -126,6 +171,22 @@ export const adminApi = {
     }),
   remove: (id: number) =>
     jsonFetch<{ id: number }>(`/api/admin/products/${id}`, { method: "DELETE" }),
+
+  // Reviews
+  listReviews: () => jsonFetch<{ reviews: AdminReview[] }>(`/api/admin/reviews`),
+  deleteReview: (id: number) =>
+    jsonFetch<{ id: number }>(`/api/admin/reviews/${id}`, { method: "DELETE" }),
+
+  // Orders
+  listOrders: (status?: string) =>
+    jsonFetch<{ orders: AdminOrder[] }>(
+      `/api/admin/orders${status && status !== "all" ? `?status=${encodeURIComponent(status)}` : ""}`,
+    ),
+  updateOrderStatus: (id: number, status: OrderStatus) =>
+    jsonFetch<AdminOrder & { notification?: { sent: boolean; reason?: string } | null }>(
+      `/api/admin/orders/${id}/status`,
+      { method: "PATCH", body: JSON.stringify({ status }) },
+    ),
 };
 
 /** Default spec rows pre-filled when creating a new product (matches the brief). */

@@ -2,13 +2,14 @@ import { useState, useEffect } from "react";
 import { useParams, useLocation, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import {
-  adminApi, DEFAULT_SPEC_LABELS,
+  adminApi, DEFAULT_SPEC_LABELS, CATEGORY_OPTIONS,
   type ProductInput, type ProductColor, type ProductStorageOption, type ProductSpec,
 } from "@/lib/admin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AdminGuard } from "./guard";
 import { toast } from "sonner";
 import { ArrowLeft, Plus, Trash2, Save, Image as ImageIcon, GripVertical } from "lucide-react";
@@ -43,7 +44,7 @@ const EMPTY: ProductInput = {
   price: 0, oldPrice: null, cashPrice: null, discount: 0, rating: 4.5,
   tag: "", image: "", images: [], inStock: true, description: "",
   colors: [], storageOptions: [], specifications: [],
-  deliveryTime: "3-5 Days", emiAvailable: true, whatsappNumber: "",
+  deliveryTime: "3-5 Days", whatsappNumber: "",
 };
 
 function FormInner() {
@@ -86,7 +87,6 @@ function FormInner() {
         storageOptions: existing.storageOptions ?? [],
         specifications: existing.specifications ?? [],
         deliveryTime: existing.deliveryTime ?? "3-5 Days",
-        emiAvailable: existing.emiAvailable ?? true,
         whatsappNumber: existing.whatsappNumber ?? "",
       });
     }
@@ -196,12 +196,17 @@ function FormInner() {
             <Field label="Model" hint="Shown in the spec table">
               <Input className={inputCls} value={form.model} onChange={(e) => set("model", e.target.value)} placeholder="Pixel 9 Pro XL" />
             </Field>
-            <Field label="Category" required hint="Lowercase, e.g. mobile, laptop">
-              <Input className={inputCls} value={form.category} onChange={(e) => set("category", e.target.value.toLowerCase())} placeholder="mobile" list="cat-list" />
-              <datalist id="cat-list">
-                <option value="mobile" /><option value="laptop" /><option value="tablet" />
-                <option value="accessories" /><option value="audio" /><option value="wearables" />
-              </datalist>
+            <Field label="Category" required hint="Pick the category this product belongs to">
+              <Select value={form.category || undefined} onValueChange={(v) => set("category", v)}>
+                <SelectTrigger className={inputCls}>
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORY_OPTIONS.map((c) => (
+                    <SelectItem key={c.slug} value={c.slug}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </Field>
             <Field label="Product Code / SKU" hint='Shown next to availability, e.g. "1-15"'>
               <Input className={inputCls} value={form.code} onChange={(e) => set("code", e.target.value)} placeholder="1-15" />
@@ -273,16 +278,22 @@ function FormInner() {
         </Section>
 
         {/* Colors */}
-        <Section title="Colors" desc="Selectable colour swatches on the product page.">
+        <Section title="Colors" desc="Selectable colour swatches. Add an optional image URL per colour — when a customer picks that colour, its image shows in the main image area.">
           <div className="flex justify-end mb-2">
             <Button type="button" variant="outline" size="sm" className="gap-1.5 h-8" onClick={addColor}><Plus size={14} /> Add Color</Button>
           </div>
           {(form.colors ?? []).length === 0 && <p className="text-xs text-gray-400">No colors added.</p>}
-          <div className="space-y-2">
+          <div className="space-y-3">
             {(form.colors ?? []).map((c, i) => (
               <div key={i} className="flex items-center gap-2">
-                <input type="color" value={c.hex || "#cccccc"} onChange={(e) => updateColor(i, { hex: e.target.value })} className="w-10 h-10 rounded-lg border border-gray-200 p-0.5 flex-shrink-0 cursor-pointer" />
-                <Input className={inputCls} value={c.name} onChange={(e) => updateColor(i, { name: e.target.value })} placeholder="Rose Quartz" />
+                <input type="color" value={c.hex || "#cccccc"} onChange={(e) => updateColor(i, { hex: e.target.value })} className="w-10 h-10 rounded-lg border border-gray-200 p-0.5 flex-shrink-0 cursor-pointer" title="Swatch colour" />
+                <Input className={inputCls + " w-40 flex-shrink-0"} value={c.name} onChange={(e) => updateColor(i, { name: e.target.value })} placeholder="Rose Quartz" />
+                <Input className={inputCls} value={c.image ?? ""} onChange={(e) => updateColor(i, { image: e.target.value })} placeholder="Image URL for this colour (optional)" />
+                {c.image ? (
+                  <div className="w-10 h-10 rounded-lg border bg-gray-50 p-1 flex-shrink-0 flex items-center justify-center">
+                    <img src={c.image} alt="" className="w-full h-full object-contain" onError={(e) => ((e.target as HTMLImageElement).style.opacity = "0.2")} />
+                  </div>
+                ) : null}
                 <Button type="button" variant="ghost" size="sm" className="h-9 w-9 p-0 text-gray-400 hover:text-red-600 flex-shrink-0" onClick={() => removeColor(i)}><Trash2 size={15} /></Button>
               </div>
             ))}
@@ -333,12 +344,6 @@ function FormInner() {
             </Field>
             <Field label="WhatsApp Number" hint="Digits only with country code. Blank uses the store default.">
               <Input className={inputCls} value={form.whatsappNumber} onChange={(e) => set("whatsappNumber", e.target.value)} placeholder="8801712345678" />
-            </Field>
-            <Field label="EMI Available">
-              <div className="flex items-center gap-2 h-10">
-                <Switch checked={form.emiAvailable !== false} onCheckedChange={(v) => set("emiAvailable", v)} />
-                <span className="text-sm text-gray-600">{form.emiAvailable !== false ? "Shown" : "Hidden"}</span>
-              </div>
             </Field>
           </div>
         </Section>

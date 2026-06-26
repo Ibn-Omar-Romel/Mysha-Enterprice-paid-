@@ -10,9 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { ChevronRight, Star, Truck, ShieldCheck, ShoppingCart, Check, Heart, Share2, ThumbsUp, RotateCcw, Zap, PenLine, X, BarChart2, BadgePercent } from "lucide-react";
+import { ChevronRight, Star, Truck, ShieldCheck, ShoppingCart, Check, Heart, Share2, ThumbsUp, RotateCcw, Zap, PenLine, X, BarChart2 } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
-import { EmiCalculator } from "@/components/EmiCalculator";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
@@ -147,7 +146,7 @@ export default function ProductPage() {
   });
 
   const [quantity, setQuantity] = useState(1);
-  const [activeImage, setActiveImage] = useState(0);
+  const [activeSrc, setActiveSrc] = useState<string>("");
   const [colorIdx, setColorIdx] = useState(0);
   const [storageIdx, setStorageIdx] = useState(0);
   const [showForm, setShowForm] = useState(false);
@@ -169,7 +168,7 @@ export default function ProductPage() {
   // Reset selections when the product changes.
   useEffect(() => {
     setImgError(false);
-    setActiveImage(0);
+    setActiveSrc("");
     setColorIdx(0);
     setStorageIdx(0);
     setQuantity(1);
@@ -179,6 +178,7 @@ export default function ProductPage() {
   const gallery = product
     ? Array.from(new Set([product.image, ...(product.images ?? [])].filter(Boolean)))
     : [];
+  const mainSrc = activeSrc || gallery[0];
   const colors = product?.colors ?? [];
   const storageOptions = product?.storageOptions ?? [];
   const selectedStorage = storageOptions[storageIdx];
@@ -334,9 +334,9 @@ export default function ProductPage() {
                     {product.tag}
                   </span>
                 )}
-                {!imgError && gallery[activeImage] ? (
+                {!imgError && mainSrc ? (
                   <img
-                    src={gallery[activeImage]}
+                    src={mainSrc}
                     alt={product.name}
                     onError={() => setImgError(true)}
                     className="w-full h-full object-contain p-6"
@@ -355,9 +355,9 @@ export default function ProductPage() {
                   {gallery.map((src, i) => (
                     <button
                       key={src + i}
-                      onClick={() => { setActiveImage(i); setImgError(false); }}
+                      onClick={() => { setActiveSrc(src); setImgError(false); }}
                       className={`w-16 h-16 rounded-lg border bg-gray-50 p-1.5 flex items-center justify-center transition-all ${
-                        activeImage === i ? "border-primary ring-2 ring-primary/20" : "border-gray-200 hover:border-gray-300"
+                        mainSrc === src ? "border-primary ring-2 ring-primary/20" : "border-gray-200 hover:border-gray-300"
                       }`}
                       aria-label={`View image ${i + 1}`}
                     >
@@ -442,7 +442,7 @@ export default function ProductPage() {
                       {colors.map((c, i) => (
                         <button
                           key={c.name + i}
-                          onClick={() => setColorIdx(i)}
+                          onClick={() => { setColorIdx(i); if (c.image) { setActiveSrc(c.image); setImgError(false); } }}
                           className={`flex items-center gap-1.5 pl-1.5 pr-3 py-1.5 rounded-full border text-sm transition-all ${
                             colorIdx === i ? "border-primary bg-orange-50 text-gray-900 font-medium" : "border-gray-200 text-gray-600 hover:border-gray-300"
                           }`}
@@ -528,29 +528,15 @@ export default function ProductPage() {
                 </Button>
               </div>
 
-              {/* EMI + WhatsApp row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {product.emiAvailable !== false ? (
-                  <div className="flex items-center gap-2 bg-amber-50 border border-amber-100 rounded-xl px-3.5 h-11 text-sm">
-                    <BadgePercent size={16} className="text-amber-600 flex-shrink-0" />
-                    <span className="text-gray-700">EMI Available</span>
-                    <button
-                      onClick={() => document.getElementById("emi")?.scrollIntoView({ behavior: "smooth" })}
-                      className="font-semibold text-amber-700 underline underline-offset-2 ml-auto"
-                    >
-                      View Plans
-                    </button>
-                  </div>
-                ) : <div className="hidden sm:block" />}
-                <a
-                  href={waHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 bg-green-50 hover:bg-green-100 border border-green-200 text-green-700 font-semibold rounded-xl h-11 text-sm transition-colors"
-                >
-                  <SiWhatsapp size={16} /> Whatsapp
-                </a>
-              </div>
+              {/* WhatsApp contact */}
+              <a
+                href={waHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 bg-green-50 hover:bg-green-100 border border-green-200 text-green-700 font-semibold rounded-xl h-11 text-sm transition-colors"
+              >
+                <SiWhatsapp size={16} /> Order on WhatsApp
+              </a>
 
               {/* Delivery time */}
               <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -611,11 +597,6 @@ export default function ProductPage() {
             </table>
           </div>
         )}
-
-        {/* ── EMI Calculator ── */}
-        <div id="emi" className="mb-6">
-          <EmiCalculator price={effectivePrice} />
-        </div>
 
         {/* ── Trust badges ── */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">

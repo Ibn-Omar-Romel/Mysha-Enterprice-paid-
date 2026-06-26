@@ -19,6 +19,8 @@ import NotFound from "@/pages/not-found";
 import ComparePage from "@/pages/compare";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminProductForm from "@/pages/admin/product-form";
+import AdminOrders from "@/pages/admin/orders";
+import AdminReviews from "@/pages/admin/reviews";
 import SignInPage from "@/pages/signin";
 import SignUpPage from "@/pages/signup";
 import VerifyEmailPage from "@/pages/verify-email";
@@ -60,6 +62,8 @@ function Router() {
         <Route path="/profile" component={ProfilePage} />
         <Route path="/orders" component={OrdersPage} />
         <Route path="/admin" component={AdminDashboard} />
+        <Route path="/admin/orders" component={AdminOrders} />
+        <Route path="/admin/reviews" component={AdminReviews} />
         <Route path="/admin/products/new" component={AdminProductForm} />
         <Route path="/admin/products/:id/edit" component={AdminProductForm} />
         <Route component={NotFound} />

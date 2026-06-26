@@ -12,6 +12,8 @@ export type ProductColor = {
   name: string;
   /** Optional swatch colour, e.g. "#f6cdd6" */
   hex?: string;
+  /** Optional image shown when this colour is selected. */
+  image?: string;
 };
 
 export type ProductStorageOption = {
@@ -62,8 +64,6 @@ export const productsTable = pgTable("products", {
   specifications: jsonb("specifications").$type<ProductSpec[]>().default([]).notNull(),
   // Estimated delivery window shown on the page, e.g. "3-5 Days".
   deliveryTime: text("delivery_time").default("3-5 Days"),
-  // Whether the "EMI Available" row shows.
-  emiAvailable: boolean("emi_available").default(true),
   // Optional per-product WhatsApp number (digits only). Falls back to the
   // store-wide OWNER_WHATSAPP config on the frontend when empty.
   whatsappNumber: text("whatsapp_number"),
