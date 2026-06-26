@@ -19,6 +19,13 @@ import NotFound from "@/pages/not-found";
 import ComparePage from "@/pages/compare";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminProductForm from "@/pages/admin/product-form";
+import SignInPage from "@/pages/signin";
+import SignUpPage from "@/pages/signup";
+import VerifyEmailPage from "@/pages/verify-email";
+import ForgotPasswordPage from "@/pages/forgot-password";
+import ResetPasswordPage from "@/pages/reset-password";
+import ProfilePage from "@/pages/profile";
+import OrdersPage from "@/pages/orders";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -45,6 +52,13 @@ function Router() {
         <Route path="/about" component={AboutPage} />
         <Route path="/contact" component={ContactPage} />
         <Route path="/compare" component={ComparePage} />
+        <Route path="/signin" component={SignInPage} />
+        <Route path="/signup" component={SignUpPage} />
+        <Route path="/verify-email" component={VerifyEmailPage} />
+        <Route path="/forgot-password" component={ForgotPasswordPage} />
+        <Route path="/reset-password" component={ResetPasswordPage} />
+        <Route path="/profile" component={ProfilePage} />
+        <Route path="/orders" component={OrdersPage} />
         <Route path="/admin" component={AdminDashboard} />
         <Route path="/admin/products/new" component={AdminProductForm} />
         <Route path="/admin/products/:id/edit" component={AdminProductForm} />
