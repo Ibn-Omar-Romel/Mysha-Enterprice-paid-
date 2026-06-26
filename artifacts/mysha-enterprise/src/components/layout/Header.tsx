@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { ShoppingCart, Search, User, Menu, X, Package, Heart, LogOut, LogIn, ChevronDown, BarChart2 } from "lucide-react";
+import { ShoppingCart, Search, User, Menu, X, Package, Heart, LogOut, LogIn, ChevronDown, BarChart2, LayoutDashboard } from "lucide-react";
 import { useGetCart, useListProducts } from "@workspace/api-client-react";
 import { toArray } from "@/lib/data";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useCompare } from "@/hooks/useCompare";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatBDT } from "@/lib/format";
@@ -26,6 +27,7 @@ export function Header() {
   const { data: cart } = useGetCart();
   const { count: wishlistCount } = useWishlist();
   const { items: compareItems } = useCompare();
+  const { user } = useAuth();
   const searchRef = useRef<HTMLDivElement>(null);
 
   const debouncedQuery = useDebounce(searchQuery, 300);
@@ -164,6 +166,11 @@ export function Header() {
 
         {/* Action Icons */}
         <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
+          {user?.isAdmin && (
+            <Link href="/admin" className="p-2 text-gray-300 hover:text-primary transition-colors hidden sm:flex" title="Admin Panel">
+              <LayoutDashboard size={22} />
+            </Link>
+          )}
           <Link href="/wishlist" className="p-2 text-gray-300 hover:text-primary transition-colors relative hidden sm:flex" title="Wishlist">
             <Heart size={22} />
             {wishlistCount > 0 && (
@@ -221,6 +228,11 @@ export function Header() {
             <Link href="/track" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 p-3 rounded bg-gray-800 text-white hover:bg-gray-700 transition-colors">
               <ShoppingCart size={18} /> Track Order
             </Link>
+            {user?.isAdmin && (
+              <Link href="/admin" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 p-3 rounded bg-primary/20 text-white hover:bg-primary/30 transition-colors">
+                <LayoutDashboard size={18} /> Admin Panel
+              </Link>
+            )}
           </div>
         </div>
       )}

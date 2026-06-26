@@ -8,6 +8,8 @@ export const usersTable = pgTable("users", {
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   verified: boolean("verified").notNull().default(false),
+  // Grants access to the admin panel (product management).
+  isAdmin: boolean("is_admin").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

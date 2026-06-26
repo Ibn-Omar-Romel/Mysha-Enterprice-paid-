@@ -5,6 +5,7 @@ export interface AuthUser {
   name: string;
   email: string;
   verified: boolean;
+  isAdmin?: boolean;
 }
 
 const AUTH_KEY = "mysha_auth_user";

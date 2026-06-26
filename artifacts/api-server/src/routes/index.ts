@@ -7,10 +7,14 @@ import ordersRouter from "./orders";
 import profileRouter from "./profile";
 import couponsRouter from "./coupons";
 import reviewsRouter from "./reviews";
+import adminRouter from "./admin";
+import authRouter from "./auth";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(authRouter);
+router.use(adminRouter);
 router.use(productsRouter);
 router.use(categoriesRouter);
 router.use(cartRouter);

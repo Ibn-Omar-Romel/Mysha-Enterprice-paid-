@@ -6,6 +6,23 @@ import { db } from "@workspace/db";
 import { usersTable, verificationCodesTable } from "@workspace/db";
 import { eq, and, gt } from "drizzle-orm";
 import { validateBody } from "../middlewares/validate";
+import { adminEmailList, publicUser } from "../lib/admin";
+
+/**
+ * Persist is_admin=true the first time a user whose email is in ADMIN_EMAILS
+ * signs in, so the flag becomes the source of truth even if the env list later
+ * changes. Returns the (possibly updated) user.
+ */
+async function ensureAdminFlag(user: typeof usersTable.$inferSelect) {
+  if (user.isAdmin) return user;
+  if (!adminEmailList().includes(user.email.trim().toLowerCase())) return user;
+  const [updated] = await db
+    .update(usersTable)
+    .set({ isAdmin: true })
+    .where(eq(usersTable.id, user.id))
+    .returning();
+  return updated ?? user;
+}
 
 const router = Router();
 
@@ -130,10 +147,11 @@ router.post("/auth/verify-email", validateBody(verifyCodeSchema), async (req, re
   }
 
   await db.update(verificationCodesTable).set({ used: true }).where(eq(verificationCodesTable.id, record.id));
-  const [user] = await db.update(usersTable).set({ verified: true }).where(eq(usersTable.email, email)).returning();
+  const [verifiedUser] = await db.update(usersTable).set({ verified: true }).where(eq(usersTable.email, email)).returning();
+  const user = await ensureAdminFlag(verifiedUser);
 
   req.session.userId = user.id;
-  res.json({ user: { id: user.id, name: user.name, email: user.email, verified: user.verified } });
+  res.json({ user: publicUser(user) });
 });
 
 router.post("/auth/resend-code", validateBody(emailOnlySchema), async (req, res) => {
@@ -167,8 +185,9 @@ router.post("/auth/signin", validateBody(signinSchema), async (req, res) => {
     return;
   }
 
-  req.session.userId = user.id;
-  res.json({ user: { id: user.id, name: user.name, email: user.email, verified: user.verified } });
+  const signedInUser = await ensureAdminFlag(user);
+  req.session.userId = signedInUser.id;
+  res.json({ user: publicUser(signedInUser) });
 });
 
 router.post("/auth/signout", (req, res) => {
@@ -182,10 +201,11 @@ router.get("/auth/me", async (req, res) => {
   const userId = req.session.userId;
   if (!userId) { res.status(401).json({ error: "Not authenticated" }); return; }
 
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
-  if (!user) { res.status(401).json({ error: "User not found" }); return; }
+  const [found] = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
+  if (!found) { res.status(401).json({ error: "User not found" }); return; }
 
-  res.json({ user: { id: user.id, name: user.name, email: user.email, verified: user.verified } });
+  const user = await ensureAdminFlag(found);
+  res.json({ user: publicUser(user) });
 });
 
 router.post("/auth/forgot-password", validateBody(emailOnlySchema), async (req, res) => {

@@ -17,6 +17,8 @@ import AboutPage from "@/pages/about";
 import ContactPage from "@/pages/contact";
 import NotFound from "@/pages/not-found";
 import ComparePage from "@/pages/compare";
+import AdminDashboard from "@/pages/admin/dashboard";
+import AdminProductForm from "@/pages/admin/product-form";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -43,6 +45,9 @@ function Router() {
         <Route path="/about" component={AboutPage} />
         <Route path="/contact" component={ContactPage} />
         <Route path="/compare" component={ComparePage} />
+        <Route path="/admin" component={AdminDashboard} />
+        <Route path="/admin/products/new" component={AdminProductForm} />
+        <Route path="/admin/products/:id/edit" component={AdminProductForm} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>
