@@ -10,7 +10,8 @@
   "scripts": {
     "push": "drizzle-kit push --config ./drizzle.config.ts",
     "push-force": "drizzle-kit push --force --config ./drizzle.config.ts",
-    "seed:sample": "tsx scripts/seed-sample.ts"
+    "seed:sample": "tsx scripts/seed-sample.ts",
+    "seed:phones": "tsx scripts/seed-phones.ts"
   },
   "dependencies": {
     "drizzle-orm": "catalog:",

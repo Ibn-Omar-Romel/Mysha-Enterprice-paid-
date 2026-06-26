@@ -20,7 +20,8 @@ services:
       pnpm install --no-frozen-lockfile --prod=false &&
       pnpm -r --if-present run build &&
       pnpm --filter @workspace/db push-force &&
-      pnpm --filter @workspace/db seed:sample
+      pnpm --filter @workspace/db seed:sample &&
+      pnpm --filter @workspace/db seed:phones
     # The API server also serves the built website, so one service runs everything.
     startCommand: node artifacts/api-server/dist/index.mjs
     healthCheckPath: /api/healthz
