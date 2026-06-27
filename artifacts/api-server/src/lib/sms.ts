@@ -20,9 +20,11 @@ import { logger } from "./logger";
 export async function sendSms(
   phone: string,
   message: string,
+  senderOverride?: string,
 ): Promise<{ sent: boolean; reason?: string }> {
   const apiKey = process.env["SMS_API_KEY"];
-  const senderId = process.env["SMS_SENDER_ID"];
+  // Sender comes from the admin's settings (preferred) or the env var.
+  const senderId = (senderOverride && senderOverride.trim()) || process.env["SMS_SENDER_ID"];
   const apiUrl = process.env["SMS_API_URL"] || "https://bulksmsbd.net/api/smsapi";
 
   // Normalise a Bangladeshi number to international format (8801XXXXXXXXX).
@@ -65,4 +67,10 @@ export async function sendSms(
 export function orderConfirmationMessage(orderCode: string, customerName: string): string {
   const name = customerName?.split(" ")[0] || "there";
   return `Hi ${name}, your Mysha Enterprise order ${orderCode} has been confirmed. We'll update you as it ships. Thank you for shopping with us!`;
+}
+
+/** Message sent when the admin verifies a customer's manual payment. */
+export function paymentVerifiedMessage(orderCode: string, customerName: string): string {
+  const name = customerName?.split(" ")[0] || "there";
+  return `Hi ${name}, your payment for Mysha Enterprise order ${orderCode} has been verified. We're now processing your order. Thank you!`;
 }

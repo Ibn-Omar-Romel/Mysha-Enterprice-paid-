@@ -92,29 +92,6 @@ export function Footer() {
           </div>
         </div>
 
-        {/* ── Find us on the map ── */}
-        <div className="mb-12">
-          <h3 className="text-white font-semibold mb-4 uppercase tracking-wider text-sm">Find Us</h3>
-          <div className="rounded-xl overflow-hidden border border-gray-800">
-            <iframe
-              title="Mysha Enterprise location"
-              src="https://www.google.com/maps?q=Tota%20mia%20complex%2C%20Senpara%20Parbata%2C%20Mirpur-10%2C%20Dhaka-1216&output=embed"
-              width="100%"
-              height="260"
-              style={{ border: 0 }}
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-            />
-          </div>
-          <a
-            href="https://maps.app.goo.gl/dEaBhx8pbr1jpUJy5"
-            target="_blank"
-            rel="noreferrer"
-            className="inline-block mt-3 text-sm text-primary hover:underline"
-          >
-            Open in Google Maps →
-          </a>
-        </div>
 
         <div className="pt-8 border-t border-gray-800 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-gray-500">

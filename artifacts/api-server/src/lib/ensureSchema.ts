@@ -19,9 +19,11 @@ export async function ensureSchema(): Promise<void> {
         whatsapp_number text DEFAULT '8801633800157',
         email text DEFAULT 'support@myshaenterprise.com',
         address text DEFAULT '21 (Down Floor), Tota mia complex, Senpara Parbata, Mirpur-10, Dhaka-1216',
+        sms_sender_id text DEFAULT '',
         updated_at timestamp DEFAULT now()
       );
     `);
+    await db.execute(sql`ALTER TABLE store_settings ADD COLUMN IF NOT EXISTS sms_sender_id text DEFAULT '';`);
 
     const orderCols = [
       sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_code text;`,

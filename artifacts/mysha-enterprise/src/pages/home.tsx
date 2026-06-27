@@ -127,6 +127,50 @@ export default function HomePage() {
     .filter((p) => recentIds.includes(p.id as any))
     .slice(0, 5);
 
+  // Shown when the backend categories table is empty, so the homepage always
+  // lists the real categories (not just "All Products").
+  const FALLBACK_CATEGORIES: Category[] = [
+    { id: "phones", slug: "phones", name: "Phones", icon: "smartphone" },
+    { id: "tablets", slug: "tablets", name: "Tablets & Accessories", icon: "tablet-smartphone" },
+    { id: "laptops", slug: "laptops", name: "Computer & Laptops", icon: "laptop" },
+    { id: "gadgets", slug: "gadgets", name: "Gadgets & Accessories", icon: "headphones" },
+    { id: "home-appliances", slug: "home-appliances", name: "Home Appliances", icon: "refrigerator" },
+  ];
+  const displayCategories = categories.length > 0 ? categories : FALLBACK_CATEGORIES;
+
+  const HERO_SLIDES = [
+    {
+      badge: "New Release", badgeClass: "bg-primary/20 text-primary border-primary/30",
+      title: "iPhone 16 Pro Max", text: "Titanium. So strong. So light. So Pro. The new generation of iPhone.",
+      cta: "Shop Now", href: "/category/phones", ctaClass: "bg-primary text-white hover:bg-primary/90", glow: "from-primary/20",
+      img: "https://images.unsplash.com/photo-1695048133142-1a20484d2569?q=80&w=800&auto=format&fit=crop",
+    },
+    {
+      badge: "Best Seller", badgeClass: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+      title: "MacBook Pro M3", text: "Mind-blowing. Head-turning. The most advanced Mac ever built.",
+      cta: "Explore Laptops", href: "/category/laptops", ctaClass: "bg-white text-[#0d1117] hover:bg-gray-200", glow: "from-blue-500/20",
+      img: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=800&auto=format&fit=crop",
+    },
+    {
+      badge: "Top Picks", badgeClass: "bg-primary/20 text-primary border-primary/30",
+      title: "Gadgets & Accessories", text: "Headphones, smartwatches, power banks and more to complete your setup.",
+      cta: "Explore Gadgets", href: "/category/gadgets", ctaClass: "bg-primary text-white hover:bg-primary/90", glow: "from-primary/20",
+      img: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=800&auto=format&fit=crop",
+    },
+    {
+      badge: "For Your Home", badgeClass: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+      title: "Home Appliances", text: "Smart, energy-efficient appliances for comfortable modern living.",
+      cta: "Shop Appliances", href: "/category/home-appliances", ctaClass: "bg-white text-[#0d1117] hover:bg-gray-200", glow: "from-blue-500/20",
+      img: "https://images.unsplash.com/photo-1571175443880-49e1d25b2bc5?q=80&w=800&auto=format&fit=crop",
+    },
+    {
+      badge: "Stay Connected", badgeClass: "bg-primary/20 text-primary border-primary/30",
+      title: "Tablets & Accessories", text: "Powerful tablets for work and play, plus all the accessories you need.",
+      cta: "Browse Tablets", href: "/category/tablets", ctaClass: "bg-primary text-white hover:bg-primary/90", glow: "from-primary/20",
+      img: "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?q=80&w=800&auto=format&fit=crop",
+    },
+  ];
+
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
 
   useEffect(() => {
@@ -175,71 +219,33 @@ export default function HomePage() {
       <section className="bg-[#0d1117] text-white overflow-hidden relative">
         <div className="overflow-hidden" ref={emblaRef}>
           <div className="flex">
-            {/* Slide 1 */}
-            <div className="flex-[0_0_100%] min-w-0 relative">
-              <div className="container mx-auto px-4 py-16 md:py-24 flex flex-col md:flex-row items-center justify-between gap-8">
-                <div className="flex-1 space-y-6 z-10">
-                  <div className="inline-block px-3 py-1 bg-primary/20 text-primary font-medium text-sm rounded-full border border-primary/30">
-                    New Release
+            {HERO_SLIDES.map((slide) => (
+              <div key={slide.title} className="flex-[0_0_100%] min-w-0 relative">
+                <div className="container mx-auto px-4 py-16 md:py-24 flex flex-col md:flex-row items-center justify-between gap-8">
+                  <div className="flex-1 space-y-6 z-10">
+                    <div className={`inline-block px-3 py-1 font-medium text-sm rounded-full border ${slide.badgeClass}`}>
+                      {slide.badge}
+                    </div>
+                    <h1 className="text-4xl md:text-6xl font-bold leading-tight">{slide.title}</h1>
+                    <p className="text-lg text-gray-400 max-w-lg">{slide.text}</p>
+                    <Link
+                      href={slide.href}
+                      className={`inline-flex h-12 items-center justify-center rounded-md px-8 text-sm font-medium shadow transition-colors ${slide.ctaClass}`}
+                    >
+                      {slide.cta}
+                    </Link>
                   </div>
-                  <h1 className="text-4xl md:text-6xl font-bold leading-tight">
-                    iPhone 15 Pro Max
-                  </h1>
-                  <p className="text-lg text-gray-400 max-w-lg">
-                    Titanium. So strong. So light. So Pro. Experience the new
-                    generation of iPhone.
-                  </p>
-                  <Link
-                    href="/product/1"
-                    className="inline-flex h-12 items-center justify-center rounded-md bg-primary px-8 text-sm font-medium text-white shadow transition-colors hover:bg-primary/90"
-                  >
-                    Shop Now
-                  </Link>
-                </div>
-
-                <div className="flex-1 flex justify-center z-10">
-                  <img
-                    src="https://images.unsplash.com/photo-1695048133142-1a20484d2569?q=80&w=800&auto=format&fit=crop"
-                    alt="iPhone 15 Pro"
-                    className="max-w-md w-full object-contain drop-shadow-2xl rounded-xl"
-                  />
-                </div>
-              </div>
-              <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-primary/20 to-transparent blur-3xl opacity-50 pointer-events-none" />
-            </div>
-
-            {/* Slide 2 */}
-            <div className="flex-[0_0_100%] min-w-0 relative">
-              <div className="container mx-auto px-4 py-16 md:py-24 flex flex-col md:flex-row items-center justify-between gap-8">
-                <div className="flex-1 space-y-6 z-10">
-                  <div className="inline-block px-3 py-1 bg-blue-500/20 text-blue-400 font-medium text-sm rounded-full border border-blue-500/30">
-                    Best Seller
+                  <div className="flex-1 flex justify-center z-10">
+                    <img
+                      src={slide.img}
+                      alt={slide.title}
+                      className="max-w-md w-full object-contain drop-shadow-2xl rounded-xl"
+                    />
                   </div>
-                  <h1 className="text-4xl md:text-6xl font-bold leading-tight">
-                    MacBook Pro M3
-                  </h1>
-                  <p className="text-lg text-gray-400 max-w-lg">
-                    Mind-blowing. Head-turning. The most advanced Mac ever
-                    built.
-                  </p>
-                  <Link
-                    href="/category/laptops"
-                    className="inline-flex h-12 items-center justify-center rounded-md bg-white px-8 text-sm font-medium text-[#0d1117] shadow transition-colors hover:bg-gray-200"
-                  >
-                    Explore Mac
-                  </Link>
                 </div>
-
-                <div className="flex-1 flex justify-center z-10">
-                  <img
-                    src="https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=800&auto=format&fit=crop"
-                    alt="MacBook Pro"
-                    className="max-w-md w-full object-contain drop-shadow-2xl rounded-xl"
-                  />
-                </div>
+                <div className={`absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l ${slide.glow} to-transparent blur-3xl opacity-50 pointer-events-none`} />
               </div>
-              <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-blue-500/20 to-transparent blur-3xl opacity-50 pointer-events-none" />
-            </div>
+            ))}
           </div>
         </div>
       </section>
@@ -404,7 +410,7 @@ export default function HomePage() {
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              {categories.map((cat) => {
+              {displayCategories.map((cat) => {
                 const iconKey = cat.icon || "";
                 const catImage = categoryImageMap[iconKey];
 

@@ -41,9 +41,15 @@ function verifyOrderToken(token: string): number | null {
 }
 
 // ─── Validation ───────────────────────────────────────────────────────────────
+// Bangladeshi mobile number: 11-digit local (01[3-9]XXXXXXXX) or with 880/+880.
+function isValidBdPhone(s: string): boolean {
+  const d = s.replace(/\D/g, "");
+  return /^(?:880)?0?1[3-9]\d{8}$/.test(d);
+}
+
 const addressSchema = z.object({
   name: z.string().trim().min(2).max(120),
-  phone: z.string().trim().min(6).max(30),
+  phone: z.string().trim().min(6).max(30).refine(isValidBdPhone, "Enter a valid Bangladeshi mobile number (e.g. 01XXXXXXXXX)"),
   street: z.string().trim().min(3).max(300),
   city: z.string().trim().min(2).max(120),
   state: z.string().trim().max(120).optional().default(""),
@@ -59,7 +65,7 @@ const createOrderSchema = z.object({
   // Mobile wallet used to send the (manual) payment.
   paymentChannel: z.enum(["bkash", "nagad", "rocket"]),
   transactionId: z.string().trim().min(4).max(60),
-  senderNumber: z.string().trim().min(6).max(30),
+  senderNumber: z.string().trim().min(6).max(30).refine(isValidBdPhone, "Enter a valid Bangladeshi mobile number"),
   couponCode: z.string().trim().max(40).optional(),
 });
 type CreateOrderInput = z.infer<typeof createOrderSchema>;
@@ -193,6 +199,21 @@ router.get("/orders/by-phone", async (req, res) => {
   } catch (err) {
     req.log.error({ err }, "Error fetching orders by phone");
     res.status(500).json({ error: "Failed to fetch orders" });
+  }
+});
+
+// Public order tracking by the human-friendly order code (e.g. ME-7K2Q9D).
+// Registered before /orders/:id so "track" isn't parsed as an id.
+router.get("/orders/track/:code", async (req, res) => {
+  try {
+    const code = String(req.params.code).trim().toUpperCase();
+    if (!code) return void res.status(400).json({ error: "Order ID required" });
+    const [order] = await db.select().from(ordersTable).where(eq(ordersTable.orderCode, code)).limit(1);
+    if (!order) return void res.status(404).json({ error: "Order not found" });
+    res.json(formatOrder(order));
+  } catch (err) {
+    req.log.error({ err }, "Error tracking order");
+    res.status(500).json({ error: "Failed to track order" });
   }
 });
 

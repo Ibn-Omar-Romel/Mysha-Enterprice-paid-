@@ -4,7 +4,7 @@ import { db, productsTable, reviewsTable, ordersTable, ORDER_STATUSES, storeSett
 import { eq, desc, asc, sql } from "drizzle-orm";
 import { requireAdmin } from "../middlewares/requireAdmin";
 import { validateBody } from "../middlewares/validate";
-import { sendSms, orderConfirmationMessage } from "../lib/sms";
+import { sendSms, orderConfirmationMessage, paymentVerifiedMessage } from "../lib/sms";
 import { getStoreSettings } from "../lib/settings";
 
 const router = Router();
@@ -348,7 +348,8 @@ router.patch("/admin/orders/:id/status", validateBody(statusSchema), async (req:
       const phone = String(addr.phone ?? "");
       const code = order.orderCode ?? `ME-${order.id}`;
       if (phone) {
-        notification = await sendSms(phone, orderConfirmationMessage(code, addr.name ?? ""));
+        const settings = await getStoreSettings();
+        notification = await sendSms(phone, orderConfirmationMessage(code, addr.name ?? ""), settings.smsSenderId ?? "");
         if (notification.sent) {
           await db.update(ordersTable).set({ notifiedAt: new Date() }).where(eq(ordersTable.id, id));
         }
@@ -372,9 +373,24 @@ router.patch("/admin/orders/:id/payment", validateBody(paymentStatusSchema), asy
   if (Number.isNaN(id)) { res.status(400).json({ error: "Invalid order ID" }); return; }
   const { paymentStatus } = req.body as z.infer<typeof paymentStatusSchema>;
   try {
+    const [existing] = await db.select().from(ordersTable).where(eq(ordersTable.id, id));
+    if (!existing) { res.status(404).json({ error: "Order not found" }); return; }
+
     const [order] = await db.update(ordersTable).set({ paymentStatus }).where(eq(ordersTable.id, id)).returning();
-    if (!order) { res.status(404).json({ error: "Order not found" }); return; }
-    res.json(formatAdminOrder(order));
+
+    // When marking a payment verified (first time), text the customer.
+    let notification: { sent: boolean; reason?: string } | null = null;
+    if (paymentStatus === "verified" && existing.paymentStatus !== "verified") {
+      const addr = (order.shippingAddress ?? {}) as Record<string, any>;
+      const phone = String(addr.phone ?? "");
+      const code = order.orderCode ?? `ME-${order.id}`;
+      if (phone) {
+        const settings = await getStoreSettings();
+        notification = await sendSms(phone, paymentVerifiedMessage(code, addr.name ?? ""), settings.smsSenderId ?? "");
+      }
+    }
+
+    res.json({ ...formatAdminOrder(order), notification });
   } catch (err: any) {
     console.error("[PATCH /api/admin/orders/:id/payment]", err?.message ?? err);
     res.status(500).json({ error: "Failed to update payment status" });
@@ -416,6 +432,7 @@ const settingsSchema = z.object({
   whatsappNumber: z.string().trim().max(30).optional().or(z.literal("")),
   email: z.string().trim().max(160).optional().or(z.literal("")),
   address: z.string().trim().max(400).optional().or(z.literal("")),
+  smsSenderId: z.string().trim().max(30).optional().or(z.literal("")),
 });
 
 // ─── GET /api/admin/settings ──────────────────────────────────────────────────
@@ -429,6 +446,7 @@ router.get("/admin/settings", async (_req: Request, res: Response) => {
       whatsappNumber: s.whatsappNumber ?? "",
       email: s.email ?? "",
       address: s.address ?? "",
+      smsSenderId: s.smsSenderId ?? "",
     });
   } catch (err: any) {
     console.error("[GET /api/admin/settings]", err?.message ?? err);
@@ -453,6 +471,7 @@ router.put("/admin/settings", validateBody(settingsSchema), async (req: Request,
       whatsappNumber: body.whatsappNumber || null,
       email: body.email || null,
       address: body.address || null,
+      smsSenderId: body.smsSenderId || "",
       updatedAt: new Date(),
     }).where(eq(storeSettingsTable.id, 1));
     res.json({ ok: true });

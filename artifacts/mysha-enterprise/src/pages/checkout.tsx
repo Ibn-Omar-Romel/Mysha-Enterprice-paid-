@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useLocation, Link } from "wouter";
 import { useGetCart, getGetCartQueryKey, getListOrdersQueryKey } from "@workspace/api-client-react";
-import { formatBDT } from "@/lib/format";
+import { formatBDT, isValidBdPhone } from "@/lib/format";
 import { STORE_NAME } from "@/lib/config";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { Button } from "@/components/ui/button";
@@ -110,12 +110,12 @@ export default function CheckoutPage() {
 
   const validate = (): string | null => {
     if (form.name.trim().length < 2) return "Enter your full name.";
-    if (form.phone.replace(/\D/g, "").length < 11) return "Enter a valid phone number.";
+    if (!isValidBdPhone(form.phone)) return "Enter a valid Bangladeshi mobile number (e.g. 01XXXXXXXXX).";
     if (form.street.trim().length < 5) return "Enter your street address.";
     if (form.city.trim().length < 2) return "Enter your city.";
     if (!channel) return "Select a payment wallet.";
     if (transactionId.trim().length < 4) return "Enter the Transaction ID from your payment.";
-    if (senderNumber.replace(/\D/g, "").length < 6) return "Enter the number you paid from.";
+    if (!isValidBdPhone(senderNumber)) return "Enter the valid Bangladeshi number you paid from.";
     return null;
   };
 

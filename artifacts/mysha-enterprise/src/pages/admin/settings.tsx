@@ -119,6 +119,11 @@ function SettingsInner() {
               <div><Label className="mb-1.5 block">WhatsApp number (with country code)</Label><Input value={form.whatsappNumber} onChange={(e) => setForm({ ...form, whatsappNumber: e.target.value })} placeholder="8801633800157" /></div>
               <div><Label className="mb-1.5 block">Email</Label><Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="support@myshaenterprise.com" /></div>
               <div><Label className="mb-1.5 block">Address</Label><Textarea rows={2} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
+              <div>
+                <Label className="mb-1.5 block">SMS Sender ID / Number</Label>
+                <Input value={form.smsSenderId} onChange={(e) => setForm({ ...form, smsSenderId: e.target.value })} placeholder="e.g. MyshaBD or your sender number" />
+                <p className="text-xs text-gray-400 mt-1">Used as the sender for order-confirmed and payment-verified texts. Texts are sent once an SMS gateway key is configured.</p>
+              </div>
             </div>
           </Section>
 

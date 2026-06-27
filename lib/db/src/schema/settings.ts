@@ -29,6 +29,8 @@ export const storeSettingsTable = pgTable("store_settings", {
   whatsappNumber: text("whatsapp_number").default("8801633800157"),
   email: text("email").default("support@myshaenterprise.com"),
   address: text("address").default("21 (Down Floor), Tota mia complex, Senpara Parbata, Mirpur-10, Dhaka-1216"),
+  // Sender ID/number used for outgoing SMS (order confirmed / payment verified).
+  smsSenderId: text("sms_sender_id").default(""),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 

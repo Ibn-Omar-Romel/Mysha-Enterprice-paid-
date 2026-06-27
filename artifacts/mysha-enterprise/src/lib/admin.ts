@@ -172,6 +172,7 @@ export interface AdminSettings {
   whatsappNumber: string;
   email: string;
   address: string;
+  smsSenderId: string;
 }
 
 export const adminApi = {
