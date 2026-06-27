@@ -22,6 +22,7 @@ import AdminProductForm from "@/pages/admin/product-form";
 import AdminOrders from "@/pages/admin/orders";
 import AdminReviews from "@/pages/admin/reviews";
 import AdminImport from "@/pages/admin/import";
+import AdminSettings from "@/pages/admin/settings";
 import SignInPage from "@/pages/signin";
 import SignUpPage from "@/pages/signup";
 import VerifyEmailPage from "@/pages/verify-email";
@@ -66,6 +67,7 @@ function Router() {
         <Route path="/admin/orders" component={AdminOrders} />
         <Route path="/admin/reviews" component={AdminReviews} />
         <Route path="/admin/import" component={AdminImport} />
+        <Route path="/admin/settings" component={AdminSettings} />
         <Route path="/admin/products/new" component={AdminProductForm} />
         <Route path="/admin/products/:id/edit" component={AdminProductForm} />
         <Route component={NotFound} />

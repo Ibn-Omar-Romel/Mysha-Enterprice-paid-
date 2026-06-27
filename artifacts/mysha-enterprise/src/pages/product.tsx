@@ -4,6 +4,7 @@ import { toArray } from "@/lib/data";
 import { ProductCard } from "@/components/ProductCard";
 import { formatBDT } from "@/lib/format";
 import { OWNER_WHATSAPP } from "@/lib/config";
+import { useStoreSettings } from "@/hooks/useStoreSettings";
 import type { ProductDetail } from "@/lib/admin";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -86,6 +87,7 @@ export default function ProductPage() {
   const { id } = useParams();
   const productId = parseInt(id || "0", 10);
   const [, setLocation] = useLocation();
+  const { data: storeSettings } = useStoreSettings();
 
   // Full product (extended fields: gallery, variants, specs) via direct fetch.
   const { data: product, isLoading } = useQuery<ProductDetail>({
@@ -295,7 +297,7 @@ export default function ProductPage() {
     );
   }
 
-  const waNumber = (product.whatsappNumber || OWNER_WHATSAPP).replace(/[^\d]/g, "");
+  const waNumber = (product.whatsappNumber || storeSettings?.contact.whatsapp || OWNER_WHATSAPP).replace(/[^\d]/g, "");
   const waText = encodeURIComponent(
     `Hi, I'm interested in ${product.name}${variantSuffix ? ` (${variantSuffix})` : ""}. Is it available?`,
   );

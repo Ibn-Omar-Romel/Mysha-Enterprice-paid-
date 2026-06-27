@@ -144,13 +144,34 @@ export interface AdminOrder {
   orderCode: string;
   status: OrderStatus;
   total: number;
-  paymentMethod: string;
+  deliveryCharge: number;
+  paymentMethod: string; // "cod" | "online"
+  paymentChannel: string | null; // "bkash" | "nagad" | "rocket"
+  transactionId: string | null;
+  senderNumber: string | null;
+  paymentStatus: "pending" | "verified" | "rejected";
   customerName: string;
   customerPhone: string;
   shippingAddress: Record<string, any>;
   items: AdminOrderItem[];
   notifiedAt?: string | null;
   createdAt?: string | null;
+}
+
+export interface PaymentMethodConfig { enabled: boolean; number?: string }
+export interface PaymentsConfig {
+  cod: { enabled: boolean };
+  bkash: PaymentMethodConfig;
+  nagad: PaymentMethodConfig;
+  rocket: PaymentMethodConfig;
+}
+export interface AdminSettings {
+  codChargeDhaka: number;
+  codChargeOutside: number;
+  payments: PaymentsConfig;
+  whatsappNumber: string;
+  email: string;
+  address: string;
 }
 
 export const adminApi = {
@@ -193,6 +214,18 @@ export const adminApi = {
       `/api/admin/orders/${id}/status`,
       { method: "PATCH", body: JSON.stringify({ status }) },
     ),
+  updatePaymentStatus: (id: number, paymentStatus: "pending" | "verified" | "rejected") =>
+    jsonFetch<AdminOrder>(`/api/admin/orders/${id}/payment`, {
+      method: "PATCH",
+      body: JSON.stringify({ paymentStatus }),
+    }),
+  deleteOrder: (id: number) =>
+    jsonFetch<{ id: number }>(`/api/admin/orders/${id}`, { method: "DELETE" }),
+
+  // Settings
+  getSettings: () => jsonFetch<AdminSettings>(`/api/admin/settings`),
+  updateSettings: (body: AdminSettings) =>
+    jsonFetch<{ ok: boolean }>(`/api/admin/settings`, { method: "PUT", body: JSON.stringify(body) }),
 };
 
 /** Default spec rows pre-filled when creating a new product (matches the brief). */

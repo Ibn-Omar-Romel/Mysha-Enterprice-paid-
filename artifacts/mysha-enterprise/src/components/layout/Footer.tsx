@@ -1,7 +1,12 @@
 import { Link } from "wouter";
 import { FaFacebookF, FaWhatsapp } from "react-icons/fa";
 import { OWNER_WHATSAPP } from "@/lib/config";
+import { useStoreSettings } from "@/hooks/useStoreSettings";
 export function Footer() {
+  const { data: settings } = useStoreSettings();
+  const whatsapp = (settings?.contact.whatsapp || OWNER_WHATSAPP).replace(/\D/g, "");
+  const email = settings?.contact.email || "support@myshaenterprise.com";
+  const address = settings?.contact.address || "21 (Down Floor), Tota mia complex, Senpara Parbata, Mirpur-10, Dhaka-1216";
   return (
     <footer className="bg-[#0d1117] text-gray-300 pt-16 pb-8 border-t border-gray-800">
       <div className="container mx-auto px-4">
@@ -27,7 +32,7 @@ export function Footer() {
   </a>
 
   <a
-    href={`https://wa.me/${OWNER_WHATSAPP}`}
+    href={`https://wa.me/${whatsapp}`}
     target="_blank"
     rel="noreferrer"
     aria-label="WhatsApp"
@@ -70,18 +75,18 @@ export function Footer() {
                   rel="noreferrer"
                   className="hover:text-primary transition-colors"
                 >
-                  21 (Down Floor), Tota mia complex, Senpara Parbata, Mirpur-10, Dhaka-1216
+                  {address}
                 </a>
               </li>
               <li className="flex gap-3">
                 <PhoneIcon />
-                <a href={`https://wa.me/${OWNER_WHATSAPP}`} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
-                  +880 1633-800157 (WhatsApp)
+                <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
+                  +{whatsapp} (WhatsApp)
                 </a>
               </li>
               <li className="flex gap-3">
                 <MailIcon />
-                <span>support@myshaenterprise.com</span>
+                <a href={`mailto:${email}`} className="hover:text-primary transition-colors">{email}</a>
               </li>
             </ul>
           </div>

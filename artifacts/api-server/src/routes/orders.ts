@@ -6,6 +6,7 @@ import { ordersTable, cartItemsTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { validateBody } from "../middlewares/validate";
 import { applyCoupon } from "../lib/coupons";
+import { getStoreSettings, publicSettings, isDhaka } from "../lib/settings";
 
 const router = Router();
 
@@ -47,12 +48,18 @@ const addressSchema = z.object({
   city: z.string().trim().min(2).max(120),
   state: z.string().trim().max(120).optional().default(""),
   zip: z.string().trim().max(20).optional().default(""),
-  country: z.string().trim().min(2).max(120).default("Bangladesh"),
+  // Orders are only accepted within Bangladesh.
+  country: z.string().trim().max(120).optional().default("Bangladesh"),
 });
 
 const createOrderSchema = z.object({
   shippingAddress: addressSchema,
-  paymentMethod: z.enum(["Cash on Delivery", "bKash", "Nagad", "Card"]),
+  // "cod" = pay product on delivery (pay the COD charge online); "online" = pay full amount online.
+  paymentMethod: z.enum(["cod", "online"]),
+  // Mobile wallet used to send the (manual) payment.
+  paymentChannel: z.enum(["bkash", "nagad", "rocket"]),
+  transactionId: z.string().trim().min(4).max(60),
+  senderNumber: z.string().trim().min(6).max(30),
   couponCode: z.string().trim().max(40).optional(),
 });
 type CreateOrderInput = z.infer<typeof createOrderSchema>;
@@ -72,10 +79,15 @@ function formatOrder(o: typeof ordersTable.$inferSelect) {
     orderCode: o.orderCode ?? `ME-${o.id}`,
     items: (o.items as Array<{ productId: number; name: string; price: number; quantity: number; image: string; brand: string }>),
     total: parseFloat(o.total),
+    deliveryCharge: parseFloat((o.deliveryCharge ?? "0") as string),
     status: o.status,
     createdAt: o.createdAt?.toISOString() ?? new Date().toISOString(),
     shippingAddress: o.shippingAddress,
     paymentMethod: o.paymentMethod,
+    paymentChannel: o.paymentChannel ?? null,
+    transactionId: o.transactionId ?? null,
+    senderNumber: o.senderNumber ?? null,
+    paymentStatus: o.paymentStatus ?? "pending",
   };
 }
 
@@ -91,7 +103,27 @@ router.get("/orders", async (req, res) => {
 
 router.post("/orders", validateBody(createOrderSchema), async (req, res) => {
   try {
-    const { shippingAddress, paymentMethod, couponCode } = req.body as CreateOrderInput;
+    const { shippingAddress, paymentMethod, paymentChannel, transactionId, senderNumber, couponCode } =
+      req.body as CreateOrderInput;
+
+    // Bangladesh only.
+    const country = (shippingAddress.country || "Bangladesh").trim();
+    if (!/bangladesh/i.test(country)) {
+      return void res.status(400).json({ error: "We currently deliver within Bangladesh only." });
+    }
+    shippingAddress.country = "Bangladesh";
+
+    // Load store settings (charges + which methods are enabled).
+    const settings = publicSettings(await getStoreSettings());
+
+    // The chosen wallet must be enabled by the admin.
+    const channelCfg = settings.payments[paymentChannel];
+    if (!channelCfg?.enabled) {
+      return void res.status(400).json({ error: `${paymentChannel} payments are currently unavailable.` });
+    }
+    if (paymentMethod === "cod" && !settings.payments.cod.enabled) {
+      return void res.status(400).json({ error: "Cash on delivery is currently unavailable." });
+    }
 
     const cartItems = await db.select().from(cartItemsTable).where(eq(cartItemsTable.sessionId, req.session.id));
     if (cartItems.length === 0) return void res.status(400).json({ error: "Cart is empty" });
@@ -110,16 +142,25 @@ router.post("/orders", validateBody(createOrderSchema), async (req, res) => {
     // stored total cannot be tampered with.
     const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
     const coupon = couponCode ? applyCoupon(couponCode, subtotal) : null;
-    const total = coupon && coupon.valid ? coupon.finalTotal : subtotal;
+    const discountedSubtotal = coupon && coupon.valid ? coupon.finalTotal : subtotal;
+
+    // Delivery / COD charge based on city.
+    const deliveryCharge = isDhaka(shippingAddress.city) ? settings.codChargeDhaka : settings.codChargeOutside;
+    const total = discountedSubtotal + deliveryCharge;
 
     const [order] = await db.insert(ordersTable).values({
       sessionId: req.session.id,
       orderCode: generateOrderCode(),
       total: total.toString(),
-      // New orders await admin confirmation.
+      deliveryCharge: deliveryCharge.toString(),
+      // New orders await admin confirmation; payment awaits manual verification.
       status: "pending",
+      paymentStatus: "pending",
       shippingAddress,
       paymentMethod,
+      paymentChannel,
+      transactionId,
+      senderNumber,
       items,
     }).returning();
 

@@ -1,10 +1,11 @@
 import { Router, Request, Response } from "express";
 import { z } from "zod";
-import { db, productsTable, reviewsTable, ordersTable, ORDER_STATUSES } from "@workspace/db";
+import { db, productsTable, reviewsTable, ordersTable, ORDER_STATUSES, storeSettingsTable } from "@workspace/db";
 import { eq, desc, asc, sql } from "drizzle-orm";
 import { requireAdmin } from "../middlewares/requireAdmin";
 import { validateBody } from "../middlewares/validate";
 import { sendSms, orderConfirmationMessage } from "../lib/sms";
+import { getStoreSettings } from "../lib/settings";
 
 const router = Router();
 
@@ -289,7 +290,12 @@ function formatAdminOrder(o: typeof ordersTable.$inferSelect) {
     orderCode: o.orderCode ?? `ME-${o.id}`,
     status: o.status,
     total: parseFloat(o.total as string),
+    deliveryCharge: parseFloat((o.deliveryCharge ?? "0") as string),
     paymentMethod: o.paymentMethod,
+    paymentChannel: o.paymentChannel ?? null,
+    transactionId: o.transactionId ?? null,
+    senderNumber: o.senderNumber ?? null,
+    paymentStatus: o.paymentStatus ?? "pending",
     customerName: addr.name ?? "",
     customerPhone: addr.phone ?? "",
     shippingAddress: addr,
@@ -353,6 +359,106 @@ router.patch("/admin/orders/:id/status", validateBody(statusSchema), async (req:
   } catch (err: any) {
     console.error("[PATCH /api/admin/orders/:id/status]", err?.message ?? err);
     res.status(500).json({ error: "Failed to update order" });
+  }
+});
+
+const paymentStatusSchema = z.object({
+  paymentStatus: z.enum(["pending", "verified", "rejected"]),
+});
+
+// ─── PATCH /api/admin/orders/:id/payment ─── verify/reject manual payment ─────
+router.patch("/admin/orders/:id/payment", validateBody(paymentStatusSchema), async (req: Request, res: Response) => {
+  const id = parseInt(String(req.params.id), 10);
+  if (Number.isNaN(id)) { res.status(400).json({ error: "Invalid order ID" }); return; }
+  const { paymentStatus } = req.body as z.infer<typeof paymentStatusSchema>;
+  try {
+    const [order] = await db.update(ordersTable).set({ paymentStatus }).where(eq(ordersTable.id, id)).returning();
+    if (!order) { res.status(404).json({ error: "Order not found" }); return; }
+    res.json(formatAdminOrder(order));
+  } catch (err: any) {
+    console.error("[PATCH /api/admin/orders/:id/payment]", err?.message ?? err);
+    res.status(500).json({ error: "Failed to update payment status" });
+  }
+});
+
+// ─── DELETE /api/admin/orders/:id ─── remove an order ─────────────────────────
+router.delete("/admin/orders/:id", async (req: Request, res: Response) => {
+  const id = parseInt(String(req.params.id), 10);
+  if (Number.isNaN(id)) { res.status(400).json({ error: "Invalid order ID" }); return; }
+  try {
+    const [order] = await db.delete(ordersTable).where(eq(ordersTable.id, id)).returning();
+    if (!order) { res.status(404).json({ error: "Order not found" }); return; }
+    res.json({ id: order.id });
+  } catch (err: any) {
+    console.error("[DELETE /api/admin/orders/:id]", err?.message ?? err);
+    res.status(500).json({ error: "Failed to delete order" });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+//  STORE SETTINGS
+// ════════════════════════════════════════════════════════════════════════════
+
+const methodSchema = z.object({
+  enabled: z.boolean(),
+  number: z.string().trim().max(30).optional().or(z.literal("")),
+});
+
+const settingsSchema = z.object({
+  codChargeDhaka: z.coerce.number().min(0),
+  codChargeOutside: z.coerce.number().min(0),
+  payments: z.object({
+    cod: z.object({ enabled: z.boolean() }),
+    bkash: methodSchema,
+    nagad: methodSchema,
+    rocket: methodSchema,
+  }),
+  whatsappNumber: z.string().trim().max(30).optional().or(z.literal("")),
+  email: z.string().trim().max(160).optional().or(z.literal("")),
+  address: z.string().trim().max(400).optional().or(z.literal("")),
+});
+
+// ─── GET /api/admin/settings ──────────────────────────────────────────────────
+router.get("/admin/settings", async (_req: Request, res: Response) => {
+  try {
+    const s = await getStoreSettings();
+    res.json({
+      codChargeDhaka: parseFloat(s.codChargeDhaka as string),
+      codChargeOutside: parseFloat(s.codChargeOutside as string),
+      payments: s.payments,
+      whatsappNumber: s.whatsappNumber ?? "",
+      email: s.email ?? "",
+      address: s.address ?? "",
+    });
+  } catch (err: any) {
+    console.error("[GET /api/admin/settings]", err?.message ?? err);
+    res.status(500).json({ error: "Failed to load settings" });
+  }
+});
+
+// ─── PUT /api/admin/settings ──────────────────────────────────────────────────
+router.put("/admin/settings", validateBody(settingsSchema), async (req: Request, res: Response) => {
+  const body = req.body as z.infer<typeof settingsSchema>;
+  try {
+    await getStoreSettings(); // ensure row exists
+    await db.update(storeSettingsTable).set({
+      codChargeDhaka: String(body.codChargeDhaka),
+      codChargeOutside: String(body.codChargeOutside),
+      payments: {
+        cod: { enabled: body.payments.cod.enabled },
+        bkash: { enabled: body.payments.bkash.enabled, number: body.payments.bkash.number || "" },
+        nagad: { enabled: body.payments.nagad.enabled, number: body.payments.nagad.number || "" },
+        rocket: { enabled: body.payments.rocket.enabled, number: body.payments.rocket.number || "" },
+      },
+      whatsappNumber: body.whatsappNumber || null,
+      email: body.email || null,
+      address: body.address || null,
+      updatedAt: new Date(),
+    }).where(eq(storeSettingsTable.id, 1));
+    res.json({ ok: true });
+  } catch (err: any) {
+    console.error("[PUT /api/admin/settings]", err?.message ?? err);
+    res.status(500).json({ error: "Failed to save settings" });
   }
 });
 

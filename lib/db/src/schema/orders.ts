@@ -8,10 +8,20 @@ export const ordersTable = pgTable("orders", {
   // Human-friendly unique order id shown to the customer, e.g. "ME-2K7Q4D".
   orderCode: text("order_code"),
   total: numeric("total", { precision: 10, scale: 2 }).notNull(),
+  // Delivery / COD charge added based on the shipping city (Dhaka vs outside).
+  deliveryCharge: numeric("delivery_charge", { precision: 10, scale: 2 }).notNull().default("0"),
   // Workflow: pending → confirmed → processing → packed → delivered (or cancelled).
   status: text("status").notNull().default("pending"),
   shippingAddress: jsonb("shipping_address").notNull(),
-  paymentMethod: text("payment_method").notNull().default("cash"),
+  // "cod" (pay product on delivery, charge online) or "online" (full amount online).
+  paymentMethod: text("payment_method").notNull().default("cod"),
+  // Mobile wallet used to pay online: "bkash" | "nagad" | "rocket".
+  paymentChannel: text("payment_channel"),
+  // Manual-verify details the customer submits.
+  transactionId: text("transaction_id"),
+  senderNumber: text("sender_number"),
+  // Admin verification of the manual payment: pending | verified | rejected.
+  paymentStatus: text("payment_status").notNull().default("pending"),
   items: jsonb("items").notNull().default([]),
   // When the confirmation notification (SMS) was sent to the customer.
   notifiedAt: timestamp("notified_at"),
