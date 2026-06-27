@@ -9,8 +9,25 @@ import { eq } from "drizzle-orm";
 export async function getStoreSettings(): Promise<StoreSettings> {
   const [row] = await db.select().from(storeSettingsTable).where(eq(storeSettingsTable.id, 1)).limit(1);
   if (row) return row;
-  const [created] = await db.insert(storeSettingsTable).values({ id: 1 }).returning();
-  return created;
+  // Insert with explicit values rather than relying on DB-level defaults (some
+  // jsonb defaults aren't reliably applied by drizzle-kit push).
+  const [created] = await db
+    .insert(storeSettingsTable)
+    .values({
+      id: 1,
+      codChargeDhaka: "60",
+      codChargeOutside: "120",
+      payments: DEFAULT_PAYMENTS,
+      whatsappNumber: "8801633800157",
+      email: "support@myshaenterprise.com",
+      address: "21 (Down Floor), Tota mia complex, Senpara Parbata, Mirpur-10, Dhaka-1216",
+    })
+    .onConflictDoNothing()
+    .returning();
+  if (created) return created;
+  // Race fallback: another request created it first.
+  const [existing] = await db.select().from(storeSettingsTable).where(eq(storeSettingsTable.id, 1)).limit(1);
+  return existing;
 }
 
 /** Public-safe view: charges, which methods are on, their numbers, and contact. */
