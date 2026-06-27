@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useLocation, Link } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   adminApi, DEFAULT_SPEC_LABELS, CATEGORY_OPTIONS,
   type ProductInput, type ProductColor, type ProductStorageOption, type ProductSpec,
@@ -52,6 +52,7 @@ function FormInner() {
   const editingId = id ? parseInt(id, 10) : null;
   const isEdit = editingId != null;
   const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
 
   const [form, setForm] = useState<ProductInput>(() => ({
     ...EMPTY,
@@ -152,6 +153,15 @@ function FormInner() {
         await adminApi.create(payload);
         toast.success("Product created");
       }
+      // Refresh cached data so the list + product page show the new values
+      // immediately (otherwise React Query serves stale data and the edit
+      // looks like it didn't save).
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      if (isEdit) {
+        queryClient.invalidateQueries({ queryKey: ["admin-product", editingId] });
+        queryClient.invalidateQueries({ queryKey: ["product-detail", editingId] });
+      }
+      queryClient.invalidateQueries({ queryKey: ["products"] });
       setLocation("/admin");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to save");
