@@ -1,11 +1,13 @@
 import { Router, Request, Response } from "express";
 import { z } from "zod";
-import { db, productsTable, reviewsTable, ordersTable, ORDER_STATUSES, storeSettingsTable } from "@workspace/db";
+import { db, productsTable, reviewsTable, ordersTable, ORDER_STATUSES, storeSettingsTable, usersTable, ADMIN_PERMISSIONS } from "@workspace/db";
 import { eq, desc, asc, sql } from "drizzle-orm";
-import { requireAdmin } from "../middlewares/requireAdmin";
+import bcrypt from "bcryptjs";
+import { requireAdmin, requireSuperAdmin, requirePermission } from "../middlewares/requireAdmin";
 import { validateBody } from "../middlewares/validate";
 import { sendSms, orderConfirmationMessage, paymentVerifiedMessage } from "../lib/sms";
 import { getStoreSettings } from "../lib/settings";
+import { isSuperAdminUser, effectivePermissions } from "../lib/admin";
 
 const router = Router();
 
@@ -92,7 +94,7 @@ function toRow(body: ProductInput) {
 }
 
 // ─── GET /api/admin/products ─── full list (incl. out of stock) for the panel ──
-router.get("/admin/products", async (req: Request, res: Response) => {
+router.get("/admin/products", requirePermission("products"), async (req: Request, res: Response) => {
   try {
     const q = (req.query.q as string | undefined)?.trim();
     const rows = await db
@@ -132,7 +134,7 @@ router.get("/admin/products", async (req: Request, res: Response) => {
 });
 
 // ─── GET /api/admin/products/:id ─── full row for editing ──────────────────────
-router.get("/admin/products/:id", async (req: Request, res: Response) => {
+router.get("/admin/products/:id", requirePermission("products"), async (req: Request, res: Response) => {
   const id = parseInt(String(req.params.id), 10);
   if (Number.isNaN(id)) { res.status(400).json({ error: "Invalid product ID" }); return; }
   try {
@@ -153,7 +155,7 @@ router.get("/admin/products/:id", async (req: Request, res: Response) => {
 });
 
 // ─── POST /api/admin/products ─── create ───────────────────────────────────────
-router.post("/admin/products", validateBody(productInputSchema), async (req: Request, res: Response) => {
+router.post("/admin/products", requirePermission("products"), validateBody(productInputSchema), async (req: Request, res: Response) => {
   try {
     const [row] = await db.insert(productsTable).values(toRow(req.body)).returning();
     res.status(201).json({ id: row.id });
@@ -167,7 +169,7 @@ router.post("/admin/products", validateBody(productInputSchema), async (req: Req
 // Validates each product independently so one bad row doesn't fail the batch.
 // Returns how many were created plus per-row errors. The frontend sends rows in
 // small batches to stay within the JSON body limit.
-router.post("/admin/products/bulk", async (req: Request, res: Response) => {
+router.post("/admin/products/bulk", requirePermission("import"), async (req: Request, res: Response) => {
   const body = req.body as { products?: unknown };
   if (!body || !Array.isArray(body.products)) {
     res.status(400).json({ error: "Expected { products: [...] }" });
@@ -197,7 +199,7 @@ router.post("/admin/products/bulk", async (req: Request, res: Response) => {
 });
 
 // ─── PUT /api/admin/products/:id ─── update ────────────────────────────────────
-router.put("/admin/products/:id", validateBody(productInputSchema), async (req: Request, res: Response) => {
+router.put("/admin/products/:id", requirePermission("products"), validateBody(productInputSchema), async (req: Request, res: Response) => {
   const id = parseInt(String(req.params.id), 10);
   if (Number.isNaN(id)) { res.status(400).json({ error: "Invalid product ID" }); return; }
   try {
@@ -215,7 +217,7 @@ router.put("/admin/products/:id", validateBody(productInputSchema), async (req: 
 });
 
 // ─── DELETE /api/admin/products/:id ─── delete ─────────────────────────────────
-router.delete("/admin/products/:id", async (req: Request, res: Response) => {
+router.delete("/admin/products/:id", requirePermission("products"), async (req: Request, res: Response) => {
   const id = parseInt(String(req.params.id), 10);
   if (Number.isNaN(id)) { res.status(400).json({ error: "Invalid product ID" }); return; }
   try {
@@ -233,7 +235,7 @@ router.delete("/admin/products/:id", async (req: Request, res: Response) => {
 // ════════════════════════════════════════════════════════════════════════════
 
 // ─── GET /api/admin/reviews ─── all reviews, newest first, with product name ──
-router.get("/admin/reviews", async (_req: Request, res: Response) => {
+router.get("/admin/reviews", requirePermission("reviews"), async (_req: Request, res: Response) => {
   try {
     const rows = await db
       .select({
@@ -266,7 +268,7 @@ router.get("/admin/reviews", async (_req: Request, res: Response) => {
 });
 
 // ─── DELETE /api/admin/reviews/:id ─── remove a review ───────────────────────
-router.delete("/admin/reviews/:id", async (req: Request, res: Response) => {
+router.delete("/admin/reviews/:id", requirePermission("reviews"), async (req: Request, res: Response) => {
   const id = parseInt(String(req.params.id), 10);
   if (Number.isNaN(id)) { res.status(400).json({ error: "Invalid review ID" }); return; }
   try {
@@ -306,7 +308,7 @@ function formatAdminOrder(o: typeof ordersTable.$inferSelect) {
 }
 
 // ─── GET /api/admin/orders ─── all orders, oldest first ──────────────────────
-router.get("/admin/orders", async (req: Request, res: Response) => {
+router.get("/admin/orders", requirePermission("orders"), async (req: Request, res: Response) => {
   try {
     const status = (req.query.status as string | undefined)?.trim();
     const rows = await db
@@ -327,7 +329,7 @@ const statusSchema = z.object({
 });
 
 // ─── PATCH /api/admin/orders/:id/status ─── update status (+ SMS on confirm) ──
-router.patch("/admin/orders/:id/status", validateBody(statusSchema), async (req: Request, res: Response) => {
+router.patch("/admin/orders/:id/status", requirePermission("orders"), validateBody(statusSchema), async (req: Request, res: Response) => {
   const id = parseInt(String(req.params.id), 10);
   if (Number.isNaN(id)) { res.status(400).json({ error: "Invalid order ID" }); return; }
   const { status } = req.body as z.infer<typeof statusSchema>;
@@ -368,7 +370,7 @@ const paymentStatusSchema = z.object({
 });
 
 // ─── PATCH /api/admin/orders/:id/payment ─── verify/reject manual payment ─────
-router.patch("/admin/orders/:id/payment", validateBody(paymentStatusSchema), async (req: Request, res: Response) => {
+router.patch("/admin/orders/:id/payment", requirePermission("orders"), validateBody(paymentStatusSchema), async (req: Request, res: Response) => {
   const id = parseInt(String(req.params.id), 10);
   if (Number.isNaN(id)) { res.status(400).json({ error: "Invalid order ID" }); return; }
   const { paymentStatus } = req.body as z.infer<typeof paymentStatusSchema>;
@@ -398,7 +400,7 @@ router.patch("/admin/orders/:id/payment", validateBody(paymentStatusSchema), asy
 });
 
 // ─── DELETE /api/admin/orders/:id ─── remove an order ─────────────────────────
-router.delete("/admin/orders/:id", async (req: Request, res: Response) => {
+router.delete("/admin/orders/:id", requirePermission("orders"), async (req: Request, res: Response) => {
   const id = parseInt(String(req.params.id), 10);
   if (Number.isNaN(id)) { res.status(400).json({ error: "Invalid order ID" }); return; }
   try {
@@ -436,7 +438,7 @@ const settingsSchema = z.object({
 });
 
 // ─── GET /api/admin/settings ──────────────────────────────────────────────────
-router.get("/admin/settings", async (_req: Request, res: Response) => {
+router.get("/admin/settings", requirePermission("settings"), async (_req: Request, res: Response) => {
   try {
     const s = await getStoreSettings();
     res.json({
@@ -455,7 +457,7 @@ router.get("/admin/settings", async (_req: Request, res: Response) => {
 });
 
 // ─── PUT /api/admin/settings ──────────────────────────────────────────────────
-router.put("/admin/settings", validateBody(settingsSchema), async (req: Request, res: Response) => {
+router.put("/admin/settings", requirePermission("settings"), validateBody(settingsSchema), async (req: Request, res: Response) => {
   const body = req.body as z.infer<typeof settingsSchema>;
   try {
     await getStoreSettings(); // ensure row exists
@@ -478,6 +480,170 @@ router.put("/admin/settings", validateBody(settingsSchema), async (req: Request,
   } catch (err: any) {
     console.error("[PUT /api/admin/settings]", err?.message ?? err);
     res.status(500).json({ error: "Failed to save settings" });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+//  ADMIN MANAGEMENT (super admin only)
+// ════════════════════════════════════════════════════════════════════════════
+
+function publicAdmin(u: typeof usersTable.$inferSelect) {
+  return {
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    isSuperAdmin: isSuperAdminUser(u),
+    permissions: effectivePermissions(u),
+    createdAt: u.createdAt?.toISOString() ?? null,
+  };
+}
+
+// ─── GET /api/admin/admins ─── list all admins ───────────────────────────────
+router.get("/admin/admins", requireSuperAdmin, async (_req: Request, res: Response) => {
+  try {
+    const rows = await db.select().from(usersTable).where(eq(usersTable.isAdmin, true)).orderBy(desc(usersTable.createdAt));
+    res.json({ admins: rows.map(publicAdmin) });
+  } catch (err: any) {
+    console.error("[GET /api/admin/admins]", err?.message ?? err);
+    res.status(500).json({ error: "Failed to load admins" });
+  }
+});
+
+const createAdminSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  email: z.string().trim().toLowerCase().email().max(254),
+  password: z.string().min(8).max(200),
+  permissions: z.array(z.enum(ADMIN_PERMISSIONS)).default([]),
+});
+
+// ─── POST /api/admin/admins ─── create a new admin ───────────────────────────
+router.post("/admin/admins", requireSuperAdmin, validateBody(createAdminSchema), async (req: Request, res: Response) => {
+  const { name, email, password, permissions } = req.body as z.infer<typeof createAdminSchema>;
+  try {
+    const existing = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
+    if (existing.length > 0) {
+      // Promote an existing account to admin instead of erroring.
+      const [updated] = await db.update(usersTable)
+        .set({ isAdmin: true, permissions })
+        .where(eq(usersTable.email, email)).returning();
+      res.status(200).json(publicAdmin(updated));
+      return;
+    }
+    const passwordHash = await bcrypt.hash(password, 12);
+    const [user] = await db.insert(usersTable).values({
+      name, email, passwordHash, verified: true, isAdmin: true, isSuperAdmin: false, permissions,
+    }).returning();
+    res.status(201).json(publicAdmin(user));
+  } catch (err: any) {
+    console.error("[POST /api/admin/admins]", err?.message ?? err);
+    res.status(500).json({ error: "Failed to create admin" });
+  }
+});
+
+const updateAdminSchema = z.object({
+  permissions: z.array(z.enum(ADMIN_PERMISSIONS)).default([]),
+});
+
+// ─── PATCH /api/admin/admins/:id ─── update permissions ──────────────────────
+router.patch("/admin/admins/:id", requireSuperAdmin, validateBody(updateAdminSchema), async (req: Request & { adminUser?: any }, res: Response) => {
+  const id = parseInt(String(req.params.id), 10);
+  if (Number.isNaN(id)) { res.status(400).json({ error: "Invalid admin ID" }); return; }
+  const { permissions } = req.body as z.infer<typeof updateAdminSchema>;
+  try {
+    const [target] = await db.select().from(usersTable).where(eq(usersTable.id, id)).limit(1);
+    if (!target) { res.status(404).json({ error: "Admin not found" }); return; }
+    if (isSuperAdminUser(target)) { res.status(400).json({ error: "Can't change a super admin's permissions" }); return; }
+    const [updated] = await db.update(usersTable).set({ permissions }).where(eq(usersTable.id, id)).returning();
+    res.json(publicAdmin(updated));
+  } catch (err: any) {
+    console.error("[PATCH /api/admin/admins/:id]", err?.message ?? err);
+    res.status(500).json({ error: "Failed to update admin" });
+  }
+});
+
+// ─── DELETE /api/admin/admins/:id ─── remove an admin ────────────────────────
+router.delete("/admin/admins/:id", requireSuperAdmin, async (req: Request & { userId?: number }, res: Response) => {
+  const id = parseInt(String(req.params.id), 10);
+  if (Number.isNaN(id)) { res.status(400).json({ error: "Invalid admin ID" }); return; }
+  if (id === req.userId) { res.status(400).json({ error: "You can't remove yourself" }); return; }
+  try {
+    const [target] = await db.select().from(usersTable).where(eq(usersTable.id, id)).limit(1);
+    if (!target) { res.status(404).json({ error: "Admin not found" }); return; }
+    if (isSuperAdminUser(target)) { res.status(400).json({ error: "Can't remove a super admin" }); return; }
+    // Revoke admin access (keep the account, just demote).
+    await db.update(usersTable).set({ isAdmin: false, permissions: [] }).where(eq(usersTable.id, id));
+    res.json({ id });
+  } catch (err: any) {
+    console.error("[DELETE /api/admin/admins/:id]", err?.message ?? err);
+    res.status(500).json({ error: "Failed to remove admin" });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+//  FLASH SALE
+// ════════════════════════════════════════════════════════════════════════════
+
+// ─── GET /api/admin/flash-sale ─── current config + product names ────────────
+router.get("/admin/flash-sale", requirePermission("flash_sale"), async (_req: Request, res: Response) => {
+  try {
+    const s = await getStoreSettings();
+    const fs = s.flashSale ?? { endsAt: null, items: [] };
+    const ids = fs.items.map((i) => i.productId);
+    const products = ids.length
+      ? await db.select({ id: productsTable.id, name: productsTable.name, price: productsTable.price, image: productsTable.image }).from(productsTable)
+      : [];
+    const byId = new Map(products.map((p) => [p.id, p]));
+    res.json({
+      endsAt: fs.endsAt,
+      active: !!fs.endsAt && new Date(fs.endsAt).getTime() > Date.now() && fs.items.length > 0,
+      items: fs.items.map((i) => {
+        const p = byId.get(i.productId);
+        return {
+          productId: i.productId,
+          percent: i.percent,
+          name: p?.name ?? "(deleted)",
+          price: p ? parseFloat(p.price as string) : 0,
+          image: p?.image ?? "",
+        };
+      }),
+    });
+  } catch (err: any) {
+    console.error("[GET /api/admin/flash-sale]", err?.message ?? err);
+    res.status(500).json({ error: "Failed to load flash sale" });
+  }
+});
+
+const flashSaleSchema = z.object({
+  hours: z.coerce.number().min(0.5).max(720),
+  items: z.array(z.object({
+    productId: z.coerce.number().int().positive(),
+    percent: z.coerce.number().min(1).max(95),
+  })).min(1).max(100),
+});
+
+// ─── PUT /api/admin/flash-sale ─── start/update the sale ─────────────────────
+router.put("/admin/flash-sale", requirePermission("flash_sale"), validateBody(flashSaleSchema), async (req: Request, res: Response) => {
+  const { hours, items } = req.body as z.infer<typeof flashSaleSchema>;
+  try {
+    await getStoreSettings();
+    const endsAt = new Date(Date.now() + hours * 3600 * 1000).toISOString();
+    await db.update(storeSettingsTable).set({ flashSale: { endsAt, items }, updatedAt: new Date() }).where(eq(storeSettingsTable.id, 1));
+    res.json({ ok: true, endsAt });
+  } catch (err: any) {
+    console.error("[PUT /api/admin/flash-sale]", err?.message ?? err);
+    res.status(500).json({ error: "Failed to start flash sale" });
+  }
+});
+
+// ─── DELETE /api/admin/flash-sale ─── end the sale now ───────────────────────
+router.delete("/admin/flash-sale", requirePermission("flash_sale"), async (_req: Request, res: Response) => {
+  try {
+    await getStoreSettings();
+    await db.update(storeSettingsTable).set({ flashSale: { endsAt: null, items: [] }, updatedAt: new Date() }).where(eq(storeSettingsTable.id, 1));
+    res.json({ ok: true });
+  } catch (err: any) {
+    console.error("[DELETE /api/admin/flash-sale]", err?.message ?? err);
+    res.status(500).json({ error: "Failed to end flash sale" });
   }
 });
 

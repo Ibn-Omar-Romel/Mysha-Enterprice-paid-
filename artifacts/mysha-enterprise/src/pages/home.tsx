@@ -24,10 +24,36 @@ import {
   Zap,
 } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
-import { FlashSaleTimer } from "@/components/FlashSaleTimer";
+
+interface FlashSale {
+  active: boolean;
+  endsAt: string | null;
+  items: { id: number; name: string; image: string; price: number; salePrice: number; percent: number }[];
+}
+
+// Live countdown to the flash-sale end time.
+function FlashCountdown({ endsAt }: { endsAt: string }) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
+  const ms = Math.max(0, new Date(endsAt).getTime() - now);
+  const h = Math.floor(ms / 3600000), m = Math.floor((ms % 3600000) / 60000), s = Math.floor((ms % 60000) / 1000);
+  const box = (v: number, label: string) => (
+    <div className="text-center">
+      <div className="bg-white/10 rounded-lg px-2.5 py-1.5 min-w-[44px]"><span className="text-xl font-bold text-white tabular-nums">{String(v).padStart(2, "0")}</span></div>
+      <span className="text-[10px] text-gray-400 uppercase mt-1 block">{label}</span>
+    </div>
+  );
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-primary text-sm font-semibold mr-1">Ends in</span>
+      {box(h, "Hrs")}<span className="text-white font-bold">:</span>{box(m, "Min")}<span className="text-white font-bold">:</span>{box(s, "Sec")}
+    </div>
+  );
+}
 
 type Product = {
   id: string | number;
@@ -84,6 +110,16 @@ export default function HomePage() {
   const { ids: recentIds } = useRecentlyViewed();
 
   const { data: allProductsData } = useListProducts({});
+
+  const { data: flashSale } = useQuery<FlashSale>({
+    queryKey: ["flash-sale"],
+    queryFn: async () => {
+      const res = await fetch("/api/flash-sale");
+      if (!res.ok) throw new Error("failed");
+      return res.json();
+    },
+    refetchInterval: 60000,
+  });
 
   const categories: Category[] = toArray<Category>(categoriesData);
   const allProducts: Product[] = toArray<Product>(allProductsData);
@@ -235,12 +271,14 @@ export default function HomePage() {
                       {slide.cta}
                     </Link>
                   </div>
-                  <div className="flex-1 flex justify-center z-10">
-                    <img
-                      src={slide.img}
-                      alt={slide.title}
-                      className="max-w-md w-full object-contain drop-shadow-2xl rounded-xl"
-                    />
+                  <div className="flex-1 flex justify-center z-10 w-full">
+                    <div className="w-full max-w-md h-56 md:h-80 flex items-center justify-center">
+                      <img
+                        src={slide.img}
+                        alt={slide.title}
+                        className="max-h-full max-w-full object-contain drop-shadow-2xl rounded-xl"
+                      />
+                    </div>
                   </div>
                 </div>
                 <div className={`absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l ${slide.glow} to-transparent blur-3xl opacity-50 pointer-events-none`} />
@@ -300,98 +338,47 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Flash Sale Section */}
-      <section className="py-10 bg-[#0d1117]">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-7">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-                <Zap size={20} className="text-white" fill="currentColor" />
+      {/* Flash Sale Section — only shown while a sale is running */}
+      {flashSale?.active && flashSale.items.length > 0 && (
+        <section className="py-10 bg-[#0d1117]">
+          <div className="container mx-auto px-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-7">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+                  <Zap size={20} className="text-white" fill="currentColor" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white leading-tight">Flash Sale</h2>
+                  <p className="text-gray-400 text-sm">Limited time deals — don&apos;t miss out!</p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-2xl font-bold text-white leading-tight">
-                  Flash Sale
-                </h2>
-                <p className="text-gray-400 text-sm">
-                  Limited time deals — don&apos;t miss out!
-                </p>
-              </div>
+              {flashSale.endsAt && <FlashCountdown endsAt={flashSale.endsAt} />}
             </div>
-            <FlashSaleTimer />
-          </div>
 
-          {isLoadingFeatured ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {[...Array(5)].map((_, i) => (
-                <Skeleton
-                  key={i}
-                  className="h-[280px] w-full rounded-xl bg-gray-800"
-                />
-              ))}
-            </div>
-          ) : featuredDeals.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {featuredDeals.slice(0, 5).map((product) => (
-                <Link key={product.id} href={`/product/${product.id}`}>
+              {flashSale.items.slice(0, 10).map((item) => (
+                <Link key={item.id} href={`/product/${item.id}`}>
                   <div className="bg-[#1a1f2e] border border-gray-700 rounded-xl overflow-hidden hover:border-primary/60 hover:shadow-lg hover:shadow-primary/10 transition-all group cursor-pointer">
                     <div className="relative aspect-square bg-gray-900 flex items-center justify-center p-4">
-                      {!!product.discount && (
-                        <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-md z-10 animate-pulse">
-                          -{product.discount}%
-                        </span>
-                      )}
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="w-full h-full object-contain mix-blend-luminosity group-hover:mix-blend-normal group-hover:scale-105 transition-all duration-300"
-                      />
+                      <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-md z-10 animate-pulse">
+                        -{item.percent}%
+                      </span>
+                      <img src={item.image} alt={item.name} className="w-full h-full object-contain group-hover:scale-105 transition-all duration-300" />
                     </div>
                     <div className="p-3 border-t border-gray-700">
-                      <p className="text-gray-300 text-xs line-clamp-2 mb-2 min-h-[2.5rem] group-hover:text-white transition-colors">
-                        {product.name}
-                      </p>
+                      <p className="text-gray-300 text-xs line-clamp-2 mb-2 min-h-[2.5rem] group-hover:text-white transition-colors">{item.name}</p>
                       <div className="flex items-end gap-1.5">
-                        <span className="text-primary font-bold text-base leading-none">
-                          ৳{formatPrice(product.price)}
-                        </span>
-                        {!!product.oldPrice && (
-                          <span className="text-gray-500 text-xs line-through leading-none">
-                            ৳{formatPrice(product.oldPrice)}
-                          </span>
-                        )}
-                      </div>
-                      <div className="mt-2">
-                        <div className="h-1 bg-gray-700 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-gradient-to-r from-primary to-red-400 rounded-full"
-                            style={{ width: "65%" }}
-                          />
-                        </div>
-                        <p className="text-gray-500 text-[10px] mt-1">
-                          Selling fast
-                        </p>
+                        <span className="text-primary font-bold text-base leading-none">৳{formatPrice(item.salePrice)}</span>
+                        <span className="text-gray-500 text-xs line-through leading-none">৳{formatPrice(item.price)}</span>
                       </div>
                     </div>
                   </div>
                 </Link>
               ))}
             </div>
-          ) : (
-            <div className="text-center py-10 text-gray-400">
-              No flash sale products found.
-            </div>
-          )}
-
-          <div className="text-center mt-6">
-            <Link
-              href="/category/all"
-              className="inline-flex items-center gap-2 text-sm text-primary font-semibold border border-primary/30 hover:bg-primary hover:text-white px-6 py-2.5 rounded-lg transition-colors"
-            >
-              View All Deals <ChevronRight size={16} />
-            </Link>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Categories Grid */}
       <section className="py-12 bg-gray-50">

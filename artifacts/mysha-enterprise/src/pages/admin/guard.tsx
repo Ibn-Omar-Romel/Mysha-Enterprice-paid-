@@ -8,7 +8,7 @@ import { ShieldAlert, LogIn } from "lucide-react";
  * Wraps the admin pages. Shows a sign-in prompt for guests and an access-denied
  * message for signed-in non-admin users. Renders children only for admins.
  */
-export function AdminGuard({ children }: { children: React.ReactNode }) {
+export function AdminGuard({ children, permission, superAdmin }: { children: React.ReactNode; permission?: string; superAdmin?: boolean }) {
   const { user, loading, refreshUser } = useAuth();
 
   // Re-check the session on mount so admin status is fresh.
@@ -49,6 +49,20 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
           Ask the site owner to add your email to <code className="bg-gray-100 px-1 rounded">ADMIN_EMAILS</code>.
         </p>
         <Link href="/"><Button variant="outline">Back to Store</Button></Link>
+      </div>
+    );
+  }
+
+  // Section-level access (owner/super admin bypasses all checks).
+  if (!user.isSuperAdmin && (superAdmin || (permission && !(user.permissions ?? []).includes(permission)))) {
+    return (
+      <div className="container mx-auto px-4 py-24 max-w-md text-center">
+        <div className="w-14 h-14 rounded-full bg-red-50 text-red-500 flex items-center justify-center mx-auto mb-4">
+          <ShieldAlert size={26} />
+        </div>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">No access to this section</h2>
+        <p className="text-sm text-gray-500 mb-6">Your admin account doesn't have permission for this area. Ask the owner to grant access.</p>
+        <Link href="/admin"><Button variant="outline">Back to Admin</Button></Link>
       </div>
     );
   }

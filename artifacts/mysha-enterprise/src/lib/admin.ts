@@ -175,6 +175,28 @@ export interface AdminSettings {
   smsSenderId: string;
 }
 
+export const ADMIN_PERMISSIONS = ["products", "orders", "reviews", "flash_sale", "settings", "import"] as const;
+export type AdminPermission = (typeof ADMIN_PERMISSIONS)[number];
+export const PERMISSION_LABELS: Record<AdminPermission, string> = {
+  products: "Products", orders: "Orders", reviews: "Reviews", flash_sale: "Flash Sale", settings: "Settings", import: "Import",
+};
+
+export interface AdminUser {
+  id: number;
+  name: string;
+  email: string;
+  isSuperAdmin: boolean;
+  permissions: AdminPermission[];
+  createdAt?: string | null;
+}
+
+export interface FlashSaleItemInput { productId: number; percent: number }
+export interface FlashSaleAdmin {
+  endsAt: string | null;
+  active: boolean;
+  items: { productId: number; percent: number; name: string; price: number; image: string }[];
+}
+
 export const adminApi = {
   list: (q?: string) =>
     jsonFetch<{ products: AdminProductListItem[] }>(
@@ -227,6 +249,21 @@ export const adminApi = {
   getSettings: () => jsonFetch<AdminSettings>(`/api/admin/settings`),
   updateSettings: (body: AdminSettings) =>
     jsonFetch<{ ok: boolean }>(`/api/admin/settings`, { method: "PUT", body: JSON.stringify(body) }),
+
+  // Admin management (super admin only)
+  listAdmins: () => jsonFetch<{ admins: AdminUser[] }>(`/api/admin/admins`),
+  createAdmin: (body: { name: string; email: string; password: string; permissions: AdminPermission[] }) =>
+    jsonFetch<AdminUser>(`/api/admin/admins`, { method: "POST", body: JSON.stringify(body) }),
+  updateAdmin: (id: number, permissions: AdminPermission[]) =>
+    jsonFetch<AdminUser>(`/api/admin/admins/${id}`, { method: "PATCH", body: JSON.stringify({ permissions }) }),
+  removeAdmin: (id: number) =>
+    jsonFetch<{ id: number }>(`/api/admin/admins/${id}`, { method: "DELETE" }),
+
+  // Flash sale
+  getFlashSale: () => jsonFetch<FlashSaleAdmin>(`/api/admin/flash-sale`),
+  setFlashSale: (hours: number, items: FlashSaleItemInput[]) =>
+    jsonFetch<{ ok: boolean; endsAt: string }>(`/api/admin/flash-sale`, { method: "PUT", body: JSON.stringify({ hours, items }) }),
+  endFlashSale: () => jsonFetch<{ ok: boolean }>(`/api/admin/flash-sale`, { method: "DELETE" }),
 };
 
 /** Default spec rows pre-filled when creating a new product (matches the brief). */

@@ -184,7 +184,7 @@ function DashboardInner() {
 
 export default function AdminDashboard() {
   return (
-    <AdminGuard>
+    <AdminGuard permission="products">
       <DashboardInner />
     </AdminGuard>
   );

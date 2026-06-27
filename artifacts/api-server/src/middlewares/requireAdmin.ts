@@ -1,37 +1,44 @@
 import type { Request, Response, NextFunction } from "express";
-import { db, usersTable } from "@workspace/db";
+import { db, usersTable, type User, type AdminPermission } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { isAdminUser } from "../lib/admin";
+import { isAdminUser, isSuperAdminUser, hasPermission } from "../lib/admin";
+
+// The authenticated admin user is attached here by requireAdmin.
+type AdminRequest = Request & { userId?: number; adminUser?: User };
 
 /**
- * Express middleware that rejects requests from non-admin users.
- *
- * Loads the logged-in user from the session, verifies they are an admin (either
- * the DB `is_admin` flag or a match in ADMIN_EMAILS), and attaches `req.userId`.
- * Returns 401 when not signed in and 403 when signed in but not an admin.
+ * Rejects requests from non-admins. On success attaches `req.userId` and
+ * `req.adminUser` (the full row) so permission middlewares don't re-query.
  */
-export async function requireAdmin(
-  req: Request & { userId?: number },
-  res: Response,
-  next: NextFunction,
-): Promise<void> {
+export async function requireAdmin(req: AdminRequest, res: Response, next: NextFunction): Promise<void> {
   const userId = req.session.userId;
-  if (!userId) {
-    res.status(401).json({ error: "Not authenticated" });
-    return;
-  }
+  if (!userId) { res.status(401).json({ error: "Not authenticated" }); return; }
 
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
-  if (!user) {
-    res.status(401).json({ error: "Not authenticated" });
-    return;
-  }
-
-  if (!isAdminUser(user)) {
-    res.status(403).json({ error: "Admin access required" });
-    return;
-  }
+  if (!user) { res.status(401).json({ error: "Not authenticated" }); return; }
+  if (!isAdminUser(user)) { res.status(403).json({ error: "Admin access required" }); return; }
 
   req.userId = userId;
+  req.adminUser = user;
   next();
+}
+
+/** Requires the authenticated admin to be a super admin (manages other admins). */
+export function requireSuperAdmin(req: AdminRequest, res: Response, next: NextFunction): void {
+  if (!req.adminUser || !isSuperAdminUser(req.adminUser)) {
+    res.status(403).json({ error: "Only the owner can do this" });
+    return;
+  }
+  next();
+}
+
+/** Returns middleware requiring access to a specific admin section. */
+export function requirePermission(perm: AdminPermission) {
+  return (req: AdminRequest, res: Response, next: NextFunction): void => {
+    if (!req.adminUser || !hasPermission(req.adminUser, perm)) {
+      res.status(403).json({ error: `You don't have access to the ${perm} section` });
+      return;
+    }
+    next();
+  };
 }

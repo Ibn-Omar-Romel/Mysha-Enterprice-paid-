@@ -194,5 +194,5 @@ function OrdersInner() {
 }
 
 export default function AdminOrders() {
-  return <AdminGuard><OrdersInner /></AdminGuard>;
+  return <AdminGuard permission="orders"><OrdersInner /></AdminGuard>;
 }

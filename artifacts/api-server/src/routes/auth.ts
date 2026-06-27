@@ -14,11 +14,13 @@ import { adminEmailList, publicUser } from "../lib/admin";
  * changes. Returns the (possibly updated) user.
  */
 async function ensureAdminFlag(user: typeof usersTable.$inferSelect) {
-  if (user.isAdmin) return user;
-  if (!adminEmailList().includes(user.email.trim().toLowerCase())) return user;
+  const isOwner = adminEmailList().includes(user.email.trim().toLowerCase());
+  if (!isOwner) return user;
+  // Owner accounts are full super admins.
+  if (user.isAdmin && user.isSuperAdmin) return user;
   const [updated] = await db
     .update(usersTable)
-    .set({ isAdmin: true })
+    .set({ isAdmin: true, isSuperAdmin: true })
     .where(eq(usersTable.id, user.id))
     .returning();
   return updated ?? user;

@@ -207,7 +207,7 @@ function ImportInner() {
 
 export default function AdminImport() {
   return (
-    <AdminGuard>
+    <AdminGuard permission="import">
       <ImportInner />
     </AdminGuard>
   );

@@ -17,6 +17,11 @@ export const DEFAULT_PAYMENTS: PaymentsConfig = {
   rocket: { enabled: true, number: "" },
 };
 
+// A running flash sale: ends at a time, with chosen products + their discount %.
+export type FlashSaleItem = { productId: number; percent: number };
+export type FlashSaleConfig = { endsAt: string | null; items: FlashSaleItem[] };
+export const DEFAULT_FLASH_SALE: FlashSaleConfig = { endsAt: null, items: [] };
+
 // Single-row table (id is always 1) holding store-wide settings the admin edits.
 export const storeSettingsTable = pgTable("store_settings", {
   id: integer("id").primaryKey().default(1),
@@ -31,6 +36,8 @@ export const storeSettingsTable = pgTable("store_settings", {
   address: text("address").default("21 (Down Floor), Tota mia complex, Senpara Parbata, Mirpur-10, Dhaka-1216"),
   // Sender ID/number used for outgoing SMS (order confirmed / payment verified).
   smsSenderId: text("sms_sender_id").default(""),
+  // Current flash sale configuration.
+  flashSale: jsonb("flash_sale").$type<FlashSaleConfig>().notNull().default(DEFAULT_FLASH_SALE),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 

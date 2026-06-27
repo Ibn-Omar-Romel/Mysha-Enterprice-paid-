@@ -124,7 +124,7 @@ function ReviewsInner() {
 
 export default function AdminReviews() {
   return (
-    <AdminGuard>
+    <AdminGuard permission="reviews">
       <ReviewsInner />
     </AdminGuard>
   );

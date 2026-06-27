@@ -1,4 +1,5 @@
 import type { User } from "@workspace/db";
+import { ADMIN_PERMISSIONS, type AdminPermission } from "@workspace/db";
 
 /**
  * Emails listed here (via the ADMIN_EMAILS env var, comma-separated) are treated
@@ -22,6 +23,23 @@ export function isAdminUser(user: Pick<User, "email" | "isAdmin">): boolean {
   return adminEmailList().includes(user.email.trim().toLowerCase());
 }
 
+/** Super admins (the owner) can manage other admins and have every permission. */
+export function isSuperAdminUser(user: Pick<User, "email" | "isSuperAdmin">): boolean {
+  if (user.isSuperAdmin) return true;
+  return adminEmailList().includes(user.email.trim().toLowerCase());
+}
+
+/** The effective permission list for a user (super admins get all). */
+export function effectivePermissions(user: User): AdminPermission[] {
+  if (isSuperAdminUser(user)) return [...ADMIN_PERMISSIONS];
+  return Array.isArray(user.permissions) ? user.permissions : [];
+}
+
+/** True if the user may access a given admin section. */
+export function hasPermission(user: User, perm: AdminPermission): boolean {
+  return isSuperAdminUser(user) || (Array.isArray(user.permissions) && user.permissions.includes(perm));
+}
+
 /** Shape returned to the client for the authenticated user. */
 export function publicUser(user: User) {
   return {
@@ -30,5 +48,7 @@ export function publicUser(user: User) {
     email: user.email,
     verified: user.verified,
     isAdmin: isAdminUser(user),
+    isSuperAdmin: isSuperAdminUser(user),
+    permissions: effectivePermissions(user),
   };
 }

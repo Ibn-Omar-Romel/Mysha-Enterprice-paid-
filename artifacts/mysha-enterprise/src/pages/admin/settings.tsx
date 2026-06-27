@@ -137,5 +137,5 @@ function SettingsInner() {
 }
 
 export default function AdminSettings() {
-  return <AdminGuard><SettingsInner /></AdminGuard>;
+  return <AdminGuard permission="settings"><SettingsInner /></AdminGuard>;
 }

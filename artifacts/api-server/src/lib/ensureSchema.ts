@@ -24,6 +24,7 @@ export async function ensureSchema(): Promise<void> {
       );
     `);
     await db.execute(sql`ALTER TABLE store_settings ADD COLUMN IF NOT EXISTS sms_sender_id text DEFAULT '';`);
+    await db.execute(sql`ALTER TABLE store_settings ADD COLUMN IF NOT EXISTS flash_sale jsonb NOT NULL DEFAULT '{"endsAt":null,"items":[]}'::jsonb;`);
 
     const orderCols = [
       sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_code text;`,
@@ -50,8 +51,10 @@ export async function ensureSchema(): Promise<void> {
     ];
     for (const stmt of productCols) await db.execute(stmt);
 
-    // Admin flag on users.
+    // Admin flag + roles on users.
     await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin boolean NOT NULL DEFAULT false;`);
+    await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_super_admin boolean NOT NULL DEFAULT false;`);
+    await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS permissions jsonb NOT NULL DEFAULT '[]'::jsonb;`);
 
     logger.info("ensureSchema: schema verified");
   } catch (err) {

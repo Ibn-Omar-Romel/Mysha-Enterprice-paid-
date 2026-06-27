@@ -360,7 +360,7 @@ function FormInner() {
 
 export default function AdminProductForm() {
   return (
-    <AdminGuard>
+    <AdminGuard permission="products">
       <FormInner />
     </AdminGuard>
   );
