@@ -78,7 +78,7 @@ function PoliciesInner() {
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
-      <div className="container mx-auto px-4 max-w-3xl">
+      <div className="container mx-auto px-4 max-w-5xl">
         <AdminNav />
         <div className="flex items-center justify-between gap-3 mb-6">
           <div className="flex items-center gap-3">

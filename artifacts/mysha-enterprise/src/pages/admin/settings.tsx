@@ -29,7 +29,7 @@ function SettingsInner() {
   if (isLoading || !form) {
     return (
       <div className="bg-gray-50 min-h-screen py-8">
-        <div className="container mx-auto px-4 max-w-3xl"><AdminNav /><div className="text-center text-gray-400 py-16">Loading settings…</div></div>
+        <div className="container mx-auto px-4 max-w-5xl"><AdminNav /><div className="text-center text-gray-400 py-16">Loading settings…</div></div>
       </div>
     );
   }
@@ -64,7 +64,7 @@ function SettingsInner() {
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
-      <div className="container mx-auto px-4 max-w-3xl">
+      <div className="container mx-auto px-4 max-w-5xl">
         <AdminNav />
         <div className="flex items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">

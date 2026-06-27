@@ -46,7 +46,7 @@ function DashboardInner() {
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
-      <div className="container mx-auto px-4 max-w-6xl">
+      <div className="container mx-auto px-4 max-w-5xl">
         <AdminNav />
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">

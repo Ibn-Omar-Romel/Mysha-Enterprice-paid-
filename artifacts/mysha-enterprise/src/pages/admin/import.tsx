@@ -86,7 +86,7 @@ function ImportInner() {
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
-      <div className="container mx-auto px-4 max-w-4xl">
+      <div className="container mx-auto px-4 max-w-5xl">
         <AdminNav />
         <div className="flex items-center gap-3 mb-6">
           <div className="w-11 h-11 rounded-xl bg-primary text-white flex items-center justify-center"><Database size={22} /></div>
