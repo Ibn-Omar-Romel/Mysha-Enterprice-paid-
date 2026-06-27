@@ -34,6 +34,10 @@ export const storeSettingsTable = pgTable("store_settings", {
   whatsappNumber: text("whatsapp_number").default("8801633800157"),
   email: text("email").default("support@myshaenterprise.com"),
   address: text("address").default("21 (Down Floor), Tota mia complex, Senpara Parbata, Mirpur-10, Dhaka-1216"),
+  // Social profile links. Empty = hide that icon in the footer.
+  facebook: text("facebook").default("https://www.facebook.com/share/1aMHmy474e/?mibextid=wwXIfr"),
+  instagram: text("instagram").default(""),
+  youtube: text("youtube").default(""),
   // Sender ID/number used for outgoing SMS (order confirmed / payment verified).
   smsSenderId: text("sms_sender_id").default(""),
   // Current flash sale configuration.

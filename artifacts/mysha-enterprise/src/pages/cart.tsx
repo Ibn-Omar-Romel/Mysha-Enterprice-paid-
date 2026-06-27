@@ -20,6 +20,8 @@ type CartItem = {
   quantity: number;
   image: string;
   brand?: string | null;
+  color?: string | null;
+  storage?: string | null;
 };
 
 // Safely extract items array regardless of response shape
@@ -172,6 +174,16 @@ export default function CartPage() {
                         </Link>
                         {item.brand && (
                           <p className="text-sm text-gray-500">{item.brand}</p>
+                        )}
+                        {(item.color || item.storage) && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {item.storage && (
+                              <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-blue-50 text-blue-700">{item.storage}</span>
+                            )}
+                            {item.color && (
+                              <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-purple-50 text-purple-700">{item.color}</span>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>

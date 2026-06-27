@@ -10,6 +10,7 @@ export interface PublicSettings {
     rocket: { enabled: boolean; number: string };
   };
   contact: { whatsapp: string; email: string; address: string };
+  social: { facebook: string; instagram: string; youtube: string };
 }
 
 /** Public, store-wide settings (COD charges, enabled payment methods, contact). */

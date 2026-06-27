@@ -1,10 +1,18 @@
 import { Link } from "wouter";
-import { FaFacebookF, FaWhatsapp } from "react-icons/fa";
+import { FaFacebookF, FaWhatsapp, FaInstagram, FaYoutube } from "react-icons/fa";
 import { OWNER_WHATSAPP } from "@/lib/config";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { useQuery } from "@tanstack/react-query";
 
 interface PolicyLink { slug: string; title: string }
+
+// Split policies into columns of at most 6 so the footer grows sideways
+// instead of becoming one very long list.
+function chunk<T>(arr: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
 
 export function Footer() {
   const { data: settings } = useStoreSettings();
@@ -14,81 +22,96 @@ export function Footer() {
     staleTime: 1000 * 60 * 5,
   });
   const policies = policyData?.policies ?? [];
+  const policyColumns = chunk(policies, 6);
+
   const whatsapp = (settings?.contact.whatsapp || OWNER_WHATSAPP).replace(/\D/g, "");
   const email = settings?.contact.email || "support@myshaenterprise.com";
   const address = settings?.contact.address || "21 (Down Floor), Tota mia complex, Senpara Parbata, Mirpur-10, Dhaka-1216";
+
+  const facebook = settings?.social.facebook?.trim() || "";
+  const instagram = settings?.social.instagram?.trim() || "";
+  const youtube = settings?.social.youtube?.trim() || "";
+
+  const socials = [
+    facebook && { href: facebook, label: "Facebook", icon: <FaFacebookF size={17} />, hover: "hover:bg-[#1877f2]" },
+    instagram && { href: instagram, label: "Instagram", icon: <FaInstagram size={17} />, hover: "hover:bg-[#e1306c]" },
+    youtube && { href: youtube, label: "YouTube", icon: <FaYoutube size={17} />, hover: "hover:bg-[#ff0000]" },
+    whatsapp && { href: `https://wa.me/${whatsapp}`, label: "WhatsApp", icon: <FaWhatsapp size={17} />, hover: "hover:bg-green-600" },
+  ].filter(Boolean) as { href: string; label: string; icon: React.ReactNode; hover: string }[];
+
   return (
     <footer className="bg-[#0d1117] text-gray-300 pt-16 pb-8 border-t border-gray-800">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
-          <div>
-            <Link href="/" className="flex items-center gap-2 mb-6">
+        <div className="flex flex-wrap gap-x-12 gap-y-10 mb-12">
+
+          {/* Brand + about + social */}
+          <div className="min-w-[240px] flex-1 max-w-sm">
+            <Link href="/" className="flex items-center gap-2 mb-5">
               <div className="w-8 h-8 bg-primary rounded flex items-center justify-center font-bold text-lg text-white">M</div>
               <span className="text-xl font-bold tracking-tight text-white">Mysha<span className="text-primary">Enterprise</span></span>
             </Link>
             <p className="text-sm text-gray-400 mb-6 leading-relaxed">
               Your premium destination for the latest electronics, gadgets, and home appliances. We offer the best deals and fastest delivery.
             </p>
+            <div className="flex items-center gap-3">
+              {socials.map((s) => (
+                <a
+                  key={s.label}
+                  href={s.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={s.label}
+                  className={`w-10 h-10 rounded-full bg-slate-800 ${s.hover} flex items-center justify-center text-white transition-colors`}
+                >
+                  {s.icon}
+                </a>
+              ))}
             </div>
-           <div className="flex items-center gap-4">
-  <a
-    href="https://www.facebook.com/share/1aMHmy474e/?mibextid=wwXIfr"
-    target="_blank"
-    rel="noreferrer"
-    aria-label="Facebook"
-    className="w-10 h-10 rounded-full bg-slate-800 hover:bg-orange-500 flex items-center justify-center text-white transition-colors"
-  >
-    <FaFacebookF size={18} />
-  </a>
+          </div>
 
-  <a
-    href={`https://wa.me/${whatsapp}`}
-    target="_blank"
-    rel="noreferrer"
-    aria-label="WhatsApp"
-    className="w-10 h-10 rounded-full bg-slate-800 hover:bg-green-600 flex items-center justify-center text-white transition-colors"
-  >
-    <FaWhatsapp size={18} />
-  </a>
-</div>
-
-          <div>
+          {/* Quick Links */}
+          <div className="min-w-[150px]">
             <h3 className="text-white font-semibold mb-6 uppercase tracking-wider text-sm">Quick Links</h3>
             <ul className="space-y-3 text-sm">
               <li><Link href="/about" className="hover:text-primary transition-colors">About Us</Link></li>
               <li><Link href="/contact" className="hover:text-primary transition-colors">Contact Us</Link></li>
               <li><Link href="/category/all" className="hover:text-primary transition-colors">All Products</Link></li>
               <li><Link href="/track" className="hover:text-primary transition-colors">Track Order</Link></li>
-              {policies.map((p) => (
-                <li key={p.slug}><Link href={`/policy/${p.slug}`} className="hover:text-primary transition-colors">{p.title}</Link></li>
-              ))}
             </ul>
           </div>
-          
-          <div>
+
+          {/* Customer Service */}
+          <div className="min-w-[150px]">
             <h3 className="text-white font-semibold mb-6 uppercase tracking-wider text-sm">Customer Service</h3>
             <ul className="space-y-3 text-sm">
               <li><Link href="/profile" className="hover:text-primary transition-colors">My Account</Link></li>
               <li><Link href="/orders" className="hover:text-primary transition-colors">Order History</Link></li>
-              <li><Link href="/track" className="hover:text-primary transition-colors">Track Order</Link></li>
               <li><Link href="/wishlist" className="hover:text-primary transition-colors">My Wishlist</Link></li>
               <li><Link href="/contact" className="hover:text-primary transition-colors">Support Center</Link></li>
             </ul>
           </div>
-          
-          <div>
+
+          {/* Policies — one column per 6, so it spreads sideways */}
+          {policyColumns.map((col, idx) => (
+            <div key={idx} className="min-w-[150px]">
+              <h3 className="text-white font-semibold mb-6 uppercase tracking-wider text-sm">
+                {idx === 0 ? "Policies" : <span className="opacity-0 select-none">Policies</span>}
+              </h3>
+              <ul className="space-y-3 text-sm">
+                {col.map((p) => (
+                  <li key={p.slug}><Link href={`/policy/${p.slug}`} className="hover:text-primary transition-colors">{p.title}</Link></li>
+                ))}
+              </ul>
+            </div>
+          ))}
+
+          {/* Contact Info */}
+          <div className="min-w-[210px]">
             <h3 className="text-white font-semibold mb-6 uppercase tracking-wider text-sm">Contact Info</h3>
             <ul className="space-y-4 text-sm text-gray-400">
               <li className="flex gap-3">
                 <MapPinIcon />
-                <a
-                  href="https://maps.app.goo.gl/dEaBhx8pbr1jpUJy5"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="hover:text-primary transition-colors"
-                >
-                  {address}
-                </a>
+                <span>{address}</span>
               </li>
               <li className="flex gap-3">
                 <PhoneIcon />
@@ -103,7 +126,6 @@ export function Footer() {
             </ul>
           </div>
         </div>
-
 
         <div className="pt-8 border-t border-gray-800 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-gray-500">
@@ -123,15 +145,6 @@ export function Footer() {
         </div>
       </div>
     </footer>
-  );
-}
-
-function SocialIcon({ type }: { type: string }) {
-  return (
-    <a href="#" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-primary hover:text-white transition-colors text-gray-400">
-      <span className="sr-only">{type}</span>
-      <div className="w-4 h-4 bg-current" style={{ maskImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Ccircle cx=\'12\' cy=\'12\' r=\'10\'/%3E%3C/svg%3E")', WebkitMaskImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Ccircle cx=\'12\' cy=\'12\' r=\'10\'/%3E%3C/svg%3E")' }} />
-    </a>
   );
 }
 

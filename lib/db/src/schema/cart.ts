@@ -11,6 +11,9 @@ export const cartItemsTable = pgTable("cart_items", {
   quantity: integer("quantity").notNull().default(1),
   image: text("image").notNull(),
   brand: text("brand").notNull().default(""),
+  // Selected variant the customer chose on the product page (for admin visibility).
+  color: text("color"),
+  storage: text("storage"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

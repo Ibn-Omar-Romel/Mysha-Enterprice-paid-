@@ -1,5 +1,5 @@
 import { useParams, Link, useLocation } from "wouter";
-import { useListProducts, useAddToCart, getGetCartQueryKey } from "@workspace/api-client-react";
+import { useListProducts, getGetCartQueryKey } from "@workspace/api-client-react";
 import { toArray } from "@/lib/data";
 import { ProductCard } from "@/components/ProductCard";
 import { formatBDT } from "@/lib/format";
@@ -155,7 +155,20 @@ export default function ProductPage() {
   const [formData, setFormData] = useState({ name: "", rating: 0, comment: "" });
   const [helpfulVoted, setHelpfulVoted] = useState<Set<number>>(new Set());
   const [imgError, setImgError] = useState(false);
-  const addToCart = useAddToCart();
+  // Add-to-cart via direct fetch so we can pass the chosen color/storage variant
+  // (the generated client only accepts productId + quantity).
+  const addToCart = useMutation({
+    mutationFn: (vars: { productId: number; quantity: number; color?: string; storage?: string }) =>
+      fetch("/api/cart/items", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(vars),
+      }).then((r) => {
+        if (!r.ok) throw new Error("Failed to add to cart");
+        return r.json();
+      }),
+  });
   const queryClient = useQueryClient();
   const { toggleWishlist, isWishlisted } = useWishlist();
   const { addToCompare, removeFromCompare, isInCompare } = useCompare();
@@ -197,7 +210,12 @@ export default function ProductPage() {
   const handleAddToCart = (then?: () => void) => {
     if (!product) return;
     addToCart.mutate(
-      { data: { productId: product.id, quantity } },
+      {
+        productId: product.id,
+        quantity,
+        ...(selectedColor?.name ? { color: selectedColor.name } : {}),
+        ...(selectedStorage?.label ? { storage: selectedStorage.label } : {}),
+      },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetCartQueryKey() });

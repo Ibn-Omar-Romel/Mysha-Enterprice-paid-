@@ -301,7 +301,7 @@ function formatAdminOrder(o: typeof ordersTable.$inferSelect) {
     customerName: addr.name ?? "",
     customerPhone: addr.phone ?? "",
     shippingAddress: addr,
-    items: (o.items as Array<{ name: string; price: number; quantity: number; image: string; brand: string }>) ?? [],
+    items: (o.items as Array<{ name: string; price: number; quantity: number; image: string; brand: string; color?: string | null; storage?: string | null }>) ?? [],
     notifiedAt: o.notifiedAt?.toISOString() ?? null,
     createdAt: o.createdAt?.toISOString() ?? null,
   };
@@ -435,6 +435,9 @@ const settingsSchema = z.object({
   email: z.string().trim().max(160).optional().or(z.literal("")),
   address: z.string().trim().max(400).optional().or(z.literal("")),
   smsSenderId: z.string().trim().max(30).optional().or(z.literal("")),
+  facebook: z.string().trim().max(300).optional().or(z.literal("")),
+  instagram: z.string().trim().max(300).optional().or(z.literal("")),
+  youtube: z.string().trim().max(300).optional().or(z.literal("")),
 });
 
 // ─── GET /api/admin/settings ──────────────────────────────────────────────────
@@ -449,6 +452,9 @@ router.get("/admin/settings", requirePermission("settings"), async (_req: Reques
       email: s.email ?? "",
       address: s.address ?? "",
       smsSenderId: s.smsSenderId ?? "",
+      facebook: s.facebook ?? "",
+      instagram: s.instagram ?? "",
+      youtube: s.youtube ?? "",
     });
   } catch (err: any) {
     console.error("[GET /api/admin/settings]", err?.message ?? err);
@@ -474,6 +480,9 @@ router.put("/admin/settings", requirePermission("settings"), validateBody(settin
       email: body.email || null,
       address: body.address || null,
       smsSenderId: body.smsSenderId || "",
+      facebook: body.facebook ?? "",
+      instagram: body.instagram ?? "",
+      youtube: body.youtube ?? "",
       updatedAt: new Date(),
     }).where(eq(storeSettingsTable.id, 1));
     res.json({ ok: true });

@@ -9,7 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { AdminGuard } from "./guard";
 import { AdminNav } from "./nav";
 import { toast } from "sonner";
-import { Settings as SettingsIcon, Save, Truck, Wallet, Phone } from "lucide-react";
+import { Settings as SettingsIcon, Save, Truck, Wallet, Phone, Share2 } from "lucide-react";
+import { FaFacebookF, FaInstagram, FaYoutube } from "react-icons/fa";
 
 const WALLETS: { key: keyof Omit<PaymentsConfig, "cod">; label: string; bg: string }[] = [
   { key: "bkash", label: "bKash", bg: "#e2136e" },
@@ -123,6 +124,23 @@ function SettingsInner() {
                 <Label className="mb-1.5 block">SMS Sender ID / Number</Label>
                 <Input value={form.smsSenderId} onChange={(e) => setForm({ ...form, smsSenderId: e.target.value })} placeholder="e.g. MyshaBD or your sender number" />
                 <p className="text-xs text-gray-400 mt-1">Used as the sender for order-confirmed and payment-verified texts. Texts are sent once an SMS gateway key is configured.</p>
+              </div>
+            </div>
+          </Section>
+
+          <Section title="Social Media" desc="Paste full profile links. Icons appear in the footer automatically — leave blank to hide one." icon={<Share2 size={18} />}>
+            <div className="space-y-4">
+              <div>
+                <Label className="mb-1.5 flex items-center gap-2"><FaFacebookF className="text-[#1877f2]" /> Facebook link</Label>
+                <Input value={form.facebook ?? ""} onChange={(e) => setForm({ ...form, facebook: e.target.value })} placeholder="https://facebook.com/yourpage" />
+              </div>
+              <div>
+                <Label className="mb-1.5 flex items-center gap-2"><FaInstagram className="text-[#e1306c]" /> Instagram link</Label>
+                <Input value={form.instagram ?? ""} onChange={(e) => setForm({ ...form, instagram: e.target.value })} placeholder="https://instagram.com/yourpage" />
+              </div>
+              <div>
+                <Label className="mb-1.5 flex items-center gap-2"><FaYoutube className="text-[#ff0000]" /> YouTube link</Label>
+                <Input value={form.youtube ?? ""} onChange={(e) => setForm({ ...form, youtube: e.target.value })} placeholder="https://youtube.com/@yourchannel" />
               </div>
             </div>
           </Section>

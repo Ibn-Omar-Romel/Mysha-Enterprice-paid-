@@ -10,6 +10,9 @@ const router = Router();
 const addItemSchema = z.object({
   productId: z.number().int().positive(),
   quantity: z.number().int().min(1).max(999),
+  // Optional variant selection chosen on the product page.
+  color: z.string().trim().max(60).optional(),
+  storage: z.string().trim().max(60).optional(),
 });
 
 const updateItemSchema = z.object({
@@ -24,6 +27,8 @@ function buildCart(items: typeof cartItemsTable.$inferSelect[]) {
     quantity: i.quantity,
     image: i.image,
     brand: i.brand,
+    color: i.color ?? null,
+    storage: i.storage ?? null,
   }));
   const total = cartItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const itemCount = cartItems.reduce((sum, i) => sum + i.quantity, 0);
@@ -42,7 +47,7 @@ router.get("/cart", async (req, res) => {
 
 router.post("/cart/items", validateBody(addItemSchema), async (req, res) => {
   try {
-    const { productId, quantity } = req.body as z.infer<typeof addItemSchema>;
+    const { productId, quantity, color, storage } = req.body as z.infer<typeof addItemSchema>;
     const [product] = await db.select().from(productsTable).where(eq(productsTable.id, productId));
     if (!product) return void res.status(404).json({ error: "Product not found" });
 
@@ -52,9 +57,14 @@ router.post("/cart/items", validateBody(addItemSchema), async (req, res) => {
       .where(and(eq(cartItemsTable.sessionId, req.session.id), eq(cartItemsTable.productId, productId)));
 
     if (existing.length > 0) {
+      // Merge quantity and keep the most recently chosen variant.
       await db
         .update(cartItemsTable)
-        .set({ quantity: existing[0].quantity + quantity })
+        .set({
+          quantity: existing[0].quantity + quantity,
+          color: color ?? existing[0].color ?? null,
+          storage: storage ?? existing[0].storage ?? null,
+        })
         .where(and(eq(cartItemsTable.sessionId, req.session.id), eq(cartItemsTable.productId, productId)));
     } else {
       await db.insert(cartItemsTable).values({
@@ -65,6 +75,8 @@ router.post("/cart/items", validateBody(addItemSchema), async (req, res) => {
         quantity,
         image: product.image,
         brand: product.brand,
+        color: color ?? null,
+        storage: storage ?? null,
       });
     }
 

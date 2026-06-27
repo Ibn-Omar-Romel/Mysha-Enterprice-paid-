@@ -25,6 +25,14 @@ export async function ensureSchema(): Promise<void> {
     `);
     await db.execute(sql`ALTER TABLE store_settings ADD COLUMN IF NOT EXISTS sms_sender_id text DEFAULT '';`);
     await db.execute(sql`ALTER TABLE store_settings ADD COLUMN IF NOT EXISTS flash_sale jsonb NOT NULL DEFAULT '{"endsAt":null,"items":[]}'::jsonb;`);
+    // Social profile links (footer icons).
+    await db.execute(sql`ALTER TABLE store_settings ADD COLUMN IF NOT EXISTS facebook text DEFAULT 'https://www.facebook.com/share/1aMHmy474e/?mibextid=wwXIfr';`);
+    await db.execute(sql`ALTER TABLE store_settings ADD COLUMN IF NOT EXISTS instagram text DEFAULT '';`);
+    await db.execute(sql`ALTER TABLE store_settings ADD COLUMN IF NOT EXISTS youtube text DEFAULT '';`);
+
+    // Cart line variant selection (color / storage), shown to the admin on orders.
+    await db.execute(sql`ALTER TABLE cart_items ADD COLUMN IF NOT EXISTS color text;`);
+    await db.execute(sql`ALTER TABLE cart_items ADD COLUMN IF NOT EXISTS storage text;`);
 
     const orderCols = [
       sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_code text;`,

@@ -47,6 +47,11 @@ export function publicSettings(s: StoreSettings) {
       email: s.email ?? "",
       address: s.address ?? "",
     },
+    social: {
+      facebook: s.facebook ?? "",
+      instagram: s.instagram ?? "",
+      youtube: s.youtube ?? "",
+    },
   };
 }
 

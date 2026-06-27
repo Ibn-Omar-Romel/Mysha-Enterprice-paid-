@@ -137,6 +137,8 @@ export interface AdminOrderItem {
   quantity: number;
   image: string;
   brand: string;
+  color?: string | null;
+  storage?: string | null;
 }
 
 export interface AdminOrder {
@@ -173,6 +175,9 @@ export interface AdminSettings {
   email: string;
   address: string;
   smsSenderId: string;
+  facebook: string;
+  instagram: string;
+  youtube: string;
 }
 
 export const ADMIN_PERMISSIONS = ["products", "orders", "reviews", "flash_sale", "policies", "settings", "import"] as const;

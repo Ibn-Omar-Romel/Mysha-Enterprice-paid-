@@ -108,12 +108,24 @@ function OrderCard({ order, onDelete }: { order: AdminOrder; onDelete: (o: Admin
               </div>
               <div className="bg-gray-50 rounded-xl p-3">
                 <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Items</p>
-                <ul className="space-y-1.5">
+                <ul className="space-y-2">
                   {order.items.map((it, i) => (
-                    <li key={i} className="flex items-center gap-2 text-sm">
-                      <img src={it.image} alt="" className="w-8 h-8 rounded border object-contain bg-white p-0.5 flex-shrink-0" />
-                      <span className="flex-1 min-w-0 truncate text-gray-700">{it.name}</span>
-                      <span className="text-gray-500">×{it.quantity}</span>
+                    <li key={i} className="flex items-start gap-2 text-sm">
+                      <img src={it.image} alt="" className="w-9 h-9 rounded border object-contain bg-white p-0.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-gray-700 truncate">{it.name}</p>
+                        {(it.color || it.storage) && (
+                          <div className="flex flex-wrap gap-1 mt-0.5">
+                            {it.storage && (
+                              <span className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-blue-50 text-blue-700">{it.storage}</span>
+                            )}
+                            {it.color && (
+                              <span className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-purple-50 text-purple-700">{it.color}</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <span className="text-gray-500 flex-shrink-0">×{it.quantity}</span>
                     </li>
                   ))}
                 </ul>

@@ -83,7 +83,7 @@ function formatOrder(o: typeof ordersTable.$inferSelect) {
     id: o.id,
     token: orderToken(o.id),
     orderCode: o.orderCode ?? `ME-${o.id}`,
-    items: (o.items as Array<{ productId: number; name: string; price: number; quantity: number; image: string; brand: string }>),
+    items: (o.items as Array<{ productId: number; name: string; price: number; quantity: number; image: string; brand: string; color?: string | null; storage?: string | null }>),
     total: parseFloat(o.total),
     deliveryCharge: parseFloat((o.deliveryCharge ?? "0") as string),
     status: o.status,
@@ -141,6 +141,8 @@ router.post("/orders", validateBody(createOrderSchema), async (req, res) => {
       quantity: i.quantity,
       image: i.image,
       brand: i.brand,
+      color: i.color ?? null,
+      storage: i.storage ?? null,
     }));
 
     // Subtotal is always computed from the server-side cart — never trusted from
