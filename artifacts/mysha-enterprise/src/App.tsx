@@ -25,6 +25,9 @@ import AdminImport from "@/pages/admin/import";
 import AdminSettings from "@/pages/admin/settings";
 import AdminAdmins from "@/pages/admin/admins";
 import AdminFlashSale from "@/pages/admin/flashsale";
+import AdminLogin from "@/pages/admin/login";
+import AdminPolicies from "@/pages/admin/policies";
+import PolicyPage from "@/pages/policy";
 import SignInPage from "@/pages/signin";
 import SignUpPage from "@/pages/signup";
 import VerifyEmailPage from "@/pages/verify-email";
@@ -58,6 +61,7 @@ function Router() {
         <Route path="/about" component={AboutPage} />
         <Route path="/contact" component={ContactPage} />
         <Route path="/compare" component={ComparePage} />
+        <Route path="/policy/:slug" component={PolicyPage} />
         <Route path="/signin" component={SignInPage} />
         <Route path="/signup" component={SignUpPage} />
         <Route path="/verify-email" component={VerifyEmailPage} />
@@ -65,12 +69,14 @@ function Router() {
         <Route path="/reset-password" component={ResetPasswordPage} />
         <Route path="/profile" component={ProfilePage} />
         <Route path="/orders" component={OrdersPage} />
+        <Route path="/admin/login" component={AdminLogin} />
         <Route path="/admin" component={AdminDashboard} />
         <Route path="/admin/orders" component={AdminOrders} />
         <Route path="/admin/reviews" component={AdminReviews} />
         <Route path="/admin/import" component={AdminImport} />
         <Route path="/admin/settings" component={AdminSettings} />
         <Route path="/admin/flash-sale" component={AdminFlashSale} />
+        <Route path="/admin/policies" component={AdminPolicies} />
         <Route path="/admin/admins" component={AdminAdmins} />
         <Route path="/admin/products/new" component={AdminProductForm} />
         <Route path="/admin/products/:id/edit" component={AdminProductForm} />

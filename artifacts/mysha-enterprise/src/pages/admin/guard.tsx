@@ -28,9 +28,9 @@ export function AdminGuard({ children, permission, superAdmin }: { children: Rea
         <div className="w-14 h-14 rounded-full bg-orange-50 text-primary flex items-center justify-center mx-auto mb-4">
           <LogIn size={26} />
         </div>
-        <h2 className="text-xl font-bold text-gray-900 mb-2">Sign in required</h2>
-        <p className="text-sm text-gray-500 mb-6">You need to sign in with an admin account to manage products.</p>
-        <Link href="/signin"><Button>Go to Sign In</Button></Link>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Admin sign in required</h2>
+        <p className="text-sm text-gray-500 mb-6">Please sign in with your admin account.</p>
+        <Link href="/admin/login"><Button>Go to Admin Sign In</Button></Link>
       </div>
     );
   }

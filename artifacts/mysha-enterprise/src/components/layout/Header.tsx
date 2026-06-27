@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { ShoppingCart, Search, User, Menu, X, Package, Heart, LogOut, LogIn, ChevronDown, BarChart2, LayoutDashboard } from "lucide-react";
+import { ShoppingCart, Search, User, Menu, X, Package, Heart, LogOut, LogIn, ChevronDown, BarChart2, LayoutDashboard, Truck } from "lucide-react";
 import { useGetCart, useListProducts } from "@workspace/api-client-react";
 import { toArray } from "@/lib/data";
 import { useWishlist } from "@/hooks/useWishlist";
@@ -166,6 +166,9 @@ export function Header() {
 
         {/* Action Icons */}
         <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
+          <Link href="/track" className="hidden sm:flex items-center gap-1.5 px-2.5 py-2 text-gray-300 hover:text-primary transition-colors text-sm font-medium" title="Track Order">
+            <Truck size={20} /> <span className="hidden lg:inline">Track Order</span>
+          </Link>
           {user?.isAdmin && (
             <Link href="/admin" className="p-2 text-gray-300 hover:text-primary transition-colors hidden sm:flex" title="Admin Panel">
               <LayoutDashboard size={22} />

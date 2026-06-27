@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { z } from "zod";
-import { db, productsTable, reviewsTable, ordersTable, ORDER_STATUSES, storeSettingsTable, usersTable, ADMIN_PERMISSIONS } from "@workspace/db";
+import { db, productsTable, reviewsTable, ordersTable, ORDER_STATUSES, storeSettingsTable, usersTable, ADMIN_PERMISSIONS, policiesTable } from "@workspace/db";
 import { eq, desc, asc, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { requireAdmin, requireSuperAdmin, requirePermission } from "../middlewares/requireAdmin";
@@ -520,16 +520,17 @@ const createAdminSchema = z.object({
 router.post("/admin/admins", requireSuperAdmin, validateBody(createAdminSchema), async (req: Request, res: Response) => {
   const { name, email, password, permissions } = req.body as z.infer<typeof createAdminSchema>;
   try {
+    const passwordHash = await bcrypt.hash(password, 12);
     const existing = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
     if (existing.length > 0) {
-      // Promote an existing account to admin instead of erroring.
+      // Promote an existing account to admin AND set the new password + name,
+      // so the credentials the owner entered always work.
       const [updated] = await db.update(usersTable)
-        .set({ isAdmin: true, permissions })
+        .set({ name, passwordHash, isAdmin: true, verified: true, permissions })
         .where(eq(usersTable.email, email)).returning();
       res.status(200).json(publicAdmin(updated));
       return;
     }
-    const passwordHash = await bcrypt.hash(password, 12);
     const [user] = await db.insert(usersTable).values({
       name, email, passwordHash, verified: true, isAdmin: true, isSuperAdmin: false, permissions,
     }).returning();
@@ -644,6 +645,81 @@ router.delete("/admin/flash-sale", requirePermission("flash_sale"), async (_req:
   } catch (err: any) {
     console.error("[DELETE /api/admin/flash-sale]", err?.message ?? err);
     res.status(500).json({ error: "Failed to end flash sale" });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+//  POLICIES
+// ════════════════════════════════════════════════════════════════════════════
+
+function slugify(s: string): string {
+  return s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80) || `policy-${Date.now()}`;
+}
+
+// ─── GET /api/admin/policies ─── all policies (incl. disabled) ───────────────
+router.get("/admin/policies", requirePermission("policies"), async (_req: Request, res: Response) => {
+  try {
+    const rows = await db.select().from(policiesTable).orderBy(asc(policiesTable.sortOrder));
+    res.json({ policies: rows.map((p) => ({ ...p, updatedAt: p.updatedAt?.toISOString() ?? null })) });
+  } catch (err: any) {
+    console.error("[GET /api/admin/policies]", err?.message ?? err);
+    res.status(500).json({ error: "Failed to load policies" });
+  }
+});
+
+const policyInputSchema = z.object({
+  title: z.string().trim().min(2).max(160),
+  content: z.string().max(50000).optional().or(z.literal("")),
+  enabled: z.boolean().optional(),
+  sortOrder: z.coerce.number().int().min(0).max(999).optional(),
+});
+
+// ─── POST /api/admin/policies ─── create ─────────────────────────────────────
+router.post("/admin/policies", requirePermission("policies"), validateBody(policyInputSchema), async (req: Request, res: Response) => {
+  const body = req.body as z.infer<typeof policyInputSchema>;
+  try {
+    let slug = slugify(body.title);
+    const exists = await db.select({ id: policiesTable.id }).from(policiesTable).where(eq(policiesTable.slug, slug)).limit(1);
+    if (exists.length) slug = `${slug}-${Date.now().toString().slice(-4)}`;
+    const [row] = await db.insert(policiesTable).values({
+      slug, title: body.title, content: body.content ?? "", enabled: body.enabled ?? true, sortOrder: body.sortOrder ?? 0,
+    }).returning();
+    res.status(201).json(row);
+  } catch (err: any) {
+    console.error("[POST /api/admin/policies]", err?.message ?? err);
+    res.status(500).json({ error: "Failed to create policy" });
+  }
+});
+
+// ─── PUT /api/admin/policies/:id ─── update ──────────────────────────────────
+router.put("/admin/policies/:id", requirePermission("policies"), validateBody(policyInputSchema), async (req: Request, res: Response) => {
+  const id = parseInt(String(req.params.id), 10);
+  if (Number.isNaN(id)) { res.status(400).json({ error: "Invalid policy ID" }); return; }
+  const body = req.body as z.infer<typeof policyInputSchema>;
+  try {
+    const [row] = await db.update(policiesTable).set({
+      title: body.title, content: body.content ?? "", enabled: body.enabled ?? true,
+      sortOrder: body.sortOrder ?? 0, updatedAt: new Date(),
+    }).where(eq(policiesTable.id, id)).returning();
+    if (!row) { res.status(404).json({ error: "Policy not found" }); return; }
+    res.json(row);
+  } catch (err: any) {
+    console.error("[PUT /api/admin/policies/:id]", err?.message ?? err);
+    res.status(500).json({ error: "Failed to update policy" });
+  }
+});
+
+// ─── DELETE /api/admin/policies/:id ──────────────────────────────────────────
+router.delete("/admin/policies/:id", requirePermission("policies"), async (req: Request, res: Response) => {
+  const id = parseInt(String(req.params.id), 10);
+  if (Number.isNaN(id)) { res.status(400).json({ error: "Invalid policy ID" }); return; }
+  try {
+    const [row] = await db.delete(policiesTable).where(eq(policiesTable.id, id)).returning();
+    if (!row) { res.status(404).json({ error: "Policy not found" }); return; }
+    res.json({ id: row.id });
+  } catch (err: any) {
+    console.error("[DELETE /api/admin/policies/:id]", err?.message ?? err);
+    res.status(500).json({ error: "Failed to delete policy" });
   }
 });
 

@@ -6,3 +6,4 @@ export * from "./profile";
 export * from "./users";
 export * from "./reviews";
 export * from "./settings";
+export * from "./policies";

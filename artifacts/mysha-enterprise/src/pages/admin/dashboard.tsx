@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { Link } from "wouter";
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminApi } from "@/lib/admin";
 import { formatBDT } from "@/lib/format";
@@ -182,10 +183,30 @@ function DashboardInner() {
   );
 }
 
+function DashboardRouter() {
+  const { user } = useAuth();
+  const [, setLocation] = useLocation();
+  const canProducts = !!user && (user.isSuperAdmin || (user.permissions ?? []).includes("products"));
+
+  useEffect(() => {
+    if (user && user.isAdmin && !canProducts) {
+      const sections: [string, string][] = [
+        ["orders", "/admin/orders"], ["reviews", "/admin/reviews"], ["flash_sale", "/admin/flash-sale"],
+        ["policies", "/admin/policies"], ["import", "/admin/import"], ["settings", "/admin/settings"],
+      ];
+      const first = sections.find(([p]) => (user.permissions ?? []).includes(p));
+      setLocation(first ? first[1] : "/admin/login");
+    }
+  }, [user, canProducts, setLocation]);
+
+  if (!canProducts) return <div className="container mx-auto px-4 py-24 text-center text-gray-400">Loading your admin panel…</div>;
+  return <DashboardInner />;
+}
+
 export default function AdminDashboard() {
   return (
-    <AdminGuard permission="products">
-      <DashboardInner />
+    <AdminGuard>
+      <DashboardRouter />
     </AdminGuard>
   );
 }

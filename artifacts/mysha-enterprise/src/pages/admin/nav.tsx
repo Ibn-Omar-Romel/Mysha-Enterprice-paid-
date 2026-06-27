@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Package, ShoppingBag, Star, Upload, Settings, Zap, Users, LogOut } from "lucide-react";
+import { Package, ShoppingBag, Star, Upload, Settings, Zap, Users, LogOut, FileText } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 type Tab = { href: string; label: string; icon: any; match: (l: string) => boolean; perm?: string; superOnly?: boolean };
@@ -9,6 +9,7 @@ const TABS: Tab[] = [
   { href: "/admin/orders", label: "Orders", icon: ShoppingBag, perm: "orders", match: (l) => l.startsWith("/admin/orders") },
   { href: "/admin/reviews", label: "Reviews", icon: Star, perm: "reviews", match: (l) => l.startsWith("/admin/reviews") },
   { href: "/admin/flash-sale", label: "Flash Sale", icon: Zap, perm: "flash_sale", match: (l) => l.startsWith("/admin/flash-sale") },
+  { href: "/admin/policies", label: "Policies", icon: FileText, perm: "policies", match: (l) => l.startsWith("/admin/policies") },
   { href: "/admin/import", label: "Import", icon: Upload, perm: "import", match: (l) => l.startsWith("/admin/import") },
   { href: "/admin/settings", label: "Settings", icon: Settings, perm: "settings", match: (l) => l.startsWith("/admin/settings") },
   { href: "/admin/admins", label: "Admins", icon: Users, superOnly: true, match: (l) => l.startsWith("/admin/admins") },
@@ -28,7 +29,7 @@ export function AdminNav() {
 
   const handleLogout = async () => {
     await signOut();
-    window.location.replace("/signin");
+    window.location.replace("/admin/login");
   };
 
   return (

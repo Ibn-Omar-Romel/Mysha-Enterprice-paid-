@@ -56,6 +56,33 @@ export async function ensureSchema(): Promise<void> {
     await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_super_admin boolean NOT NULL DEFAULT false;`);
     await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS permissions jsonb NOT NULL DEFAULT '[]'::jsonb;`);
 
+    // Policies table + default policy pages (only seeded when the table is empty).
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS policies (
+        id serial PRIMARY KEY,
+        slug text NOT NULL UNIQUE,
+        title text NOT NULL,
+        content text NOT NULL DEFAULT '',
+        enabled boolean NOT NULL DEFAULT true,
+        sort_order integer NOT NULL DEFAULT 0,
+        updated_at timestamp DEFAULT now()
+      );
+    `);
+    await db.execute(sql`
+      INSERT INTO policies (slug, title, content, sort_order)
+      SELECT v.slug, v.title, '', v.ord FROM (VALUES
+        ('privacy-policy', 'Privacy Policy', 1),
+        ('emi-payment-policy', 'EMI and Payment Policy', 2),
+        ('warranty-policy', 'Warranty Policy', 3),
+        ('exchange-policy', 'Exchange Policy', 4),
+        ('delivery-policy', 'Delivery Policy', 5),
+        ('pre-order-policy', 'Pre-Order Policy', 6),
+        ('refund-policy', 'Refund Policy', 7),
+        ('return-policy', 'Return Policy', 8)
+      ) AS v(slug, title, ord)
+      WHERE NOT EXISTS (SELECT 1 FROM policies);
+    `);
+
     logger.info("ensureSchema: schema verified");
   } catch (err) {
     logger.error({ err }, "ensureSchema failed");

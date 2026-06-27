@@ -10,12 +10,14 @@ import reviewsRouter from "./reviews";
 import adminRouter from "./admin";
 import authRouter from "./auth";
 import settingsRouter from "./settings";
+import policiesRouter from "./policies";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(authRouter);
 router.use(settingsRouter);
+router.use(policiesRouter);
 router.use(adminRouter);
 router.use(productsRouter);
 router.use(categoriesRouter);

@@ -3,7 +3,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
 // Admin panel sections a sub-admin can be granted access to.
-export const ADMIN_PERMISSIONS = ["products", "orders", "reviews", "flash_sale", "settings", "import"] as const;
+export const ADMIN_PERMISSIONS = ["products", "orders", "reviews", "flash_sale", "policies", "settings", "import"] as const;
 export type AdminPermission = (typeof ADMIN_PERMISSIONS)[number];
 
 export const usersTable = pgTable("users", {

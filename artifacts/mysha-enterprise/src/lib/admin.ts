@@ -175,11 +175,22 @@ export interface AdminSettings {
   smsSenderId: string;
 }
 
-export const ADMIN_PERMISSIONS = ["products", "orders", "reviews", "flash_sale", "settings", "import"] as const;
+export const ADMIN_PERMISSIONS = ["products", "orders", "reviews", "flash_sale", "policies", "settings", "import"] as const;
 export type AdminPermission = (typeof ADMIN_PERMISSIONS)[number];
 export const PERMISSION_LABELS: Record<AdminPermission, string> = {
-  products: "Products", orders: "Orders", reviews: "Reviews", flash_sale: "Flash Sale", settings: "Settings", import: "Import",
+  products: "Products", orders: "Orders", reviews: "Reviews", flash_sale: "Flash Sale", policies: "Policies", settings: "Settings", import: "Import",
 };
+
+export interface Policy {
+  id: number;
+  slug: string;
+  title: string;
+  content: string;
+  enabled: boolean;
+  sortOrder: number;
+  updatedAt?: string | null;
+}
+export interface PolicyInput { title: string; content: string; enabled: boolean; sortOrder: number }
 
 export interface AdminUser {
   id: number;
@@ -264,6 +275,12 @@ export const adminApi = {
   setFlashSale: (hours: number, items: FlashSaleItemInput[]) =>
     jsonFetch<{ ok: boolean; endsAt: string }>(`/api/admin/flash-sale`, { method: "PUT", body: JSON.stringify({ hours, items }) }),
   endFlashSale: () => jsonFetch<{ ok: boolean }>(`/api/admin/flash-sale`, { method: "DELETE" }),
+
+  // Policies
+  listPolicies: () => jsonFetch<{ policies: Policy[] }>(`/api/admin/policies`),
+  createPolicy: (body: PolicyInput) => jsonFetch<Policy>(`/api/admin/policies`, { method: "POST", body: JSON.stringify(body) }),
+  updatePolicy: (id: number, body: PolicyInput) => jsonFetch<Policy>(`/api/admin/policies/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  deletePolicy: (id: number) => jsonFetch<{ id: number }>(`/api/admin/policies/${id}`, { method: "DELETE" }),
 };
 
 /** Default spec rows pre-filled when creating a new product (matches the brief). */

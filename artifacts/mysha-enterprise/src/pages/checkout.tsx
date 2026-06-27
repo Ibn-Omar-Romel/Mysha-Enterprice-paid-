@@ -58,8 +58,9 @@ export default function CheckoutPage() {
   const [channel, setChannel] = useState<Channel | "">("");
   const [transactionId, setTransactionId] = useState("");
   const [senderNumber, setSenderNumber] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const set = (k: keyof typeof form, v: string) => { setForm((f) => ({ ...f, [k]: v })); setErrors((e) => ({ ...e, [k]: "" })); };
 
   const cartItems = extractCartItems(cart);
   const cartTotal = extractCartTotal(cart);
@@ -108,20 +109,22 @@ export default function CheckoutPage() {
     finally { setCouponLoading(false); }
   };
 
-  const validate = (): string | null => {
-    if (form.name.trim().length < 2) return "Enter your full name.";
-    if (!isValidBdPhone(form.phone)) return "Enter a valid Bangladeshi mobile number (e.g. 01XXXXXXXXX).";
-    if (form.street.trim().length < 5) return "Enter your street address.";
-    if (form.city.trim().length < 2) return "Enter your city.";
-    if (!channel) return "Select a payment wallet.";
-    if (transactionId.trim().length < 4) return "Enter the Transaction ID from your payment.";
-    if (!isValidBdPhone(senderNumber)) return "Enter the valid Bangladeshi number you paid from.";
-    return null;
+  const validate = (): Record<string, string> => {
+    const e: Record<string, string> = {};
+    if (form.name.trim().length < 2) e.name = "Please enter your full name.";
+    if (!isValidBdPhone(form.phone)) e.phone = "Enter a valid Bangladeshi mobile number, e.g. 01XXXXXXXXX.";
+    if (form.street.trim().length < 5) e.street = "Please enter your street address.";
+    if (form.city.trim().length < 2) e.city = "Please enter your city.";
+    if (!channel) e.channel = "Select a payment wallet (bKash/Nagad/Rocket).";
+    if (transactionId.trim().length < 4) e.transactionId = "Enter the Transaction ID from your payment.";
+    if (!isValidBdPhone(senderNumber)) e.senderNumber = "Enter the valid Bangladeshi number you paid from.";
+    return e;
   };
 
   const handlePlaceOrder = async () => {
-    const err = validate();
-    if (err) { toast.error(err); return; }
+    const errs = validate();
+    setErrors(errs);
+    if (Object.keys(errs).length) { toast.error(Object.values(errs)[0]); return; }
     setSubmitting(true);
     try {
       const res = await fetch("/api/orders", {
@@ -144,8 +147,9 @@ export default function CheckoutPage() {
   };
 
   const handleWhatsAppOrder = () => {
-    const err = validate();
-    if (err) { toast.error(err); return; }
+    const errs = validate();
+    setErrors(errs);
+    if (Object.keys(errs).length) { toast.error(Object.values(errs)[0]); return; }
     const itemLines = cartItems.map((i) => `• ${i.name} x${i.quantity} — ${formatBDT(i.price * i.quantity)}`).join("\n");
     const msg = [
       `Hello! I'd like to order from *${STORE_NAME}*`, "", `*Order:*`, itemLines, "",
@@ -215,13 +219,25 @@ export default function CheckoutPage() {
               </h2>
               <p className="text-xs text-gray-400 mb-5 ml-9">Delivery within Bangladesh only.</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div><Label className="mb-1.5 block">Full Name</Label><Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="John Doe" /></div>
-                <div><Label className="mb-1.5 block">Phone Number</Label><Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="01XXXXXXXXX" /></div>
-                <div className="md:col-span-2"><Label className="mb-1.5 block">Street Address</Label><Input value={form.street} onChange={(e) => set("street", e.target.value)} placeholder="House 123, Road 4, Block A" /></div>
+                <div>
+                  <Label className="mb-1.5 block">Full Name</Label>
+                  <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="John Doe" className={errors.name ? "border-red-400 focus-visible:ring-red-400" : ""} />
+                  {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
+                </div>
+                <div>
+                  <Label className="mb-1.5 block">Phone Number</Label>
+                  <Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="01XXXXXXXXX" className={errors.phone ? "border-red-400 focus-visible:ring-red-400" : ""} />
+                  {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
+                </div>
+                <div className="md:col-span-2">
+                  <Label className="mb-1.5 block">Street Address</Label>
+                  <Input value={form.street} onChange={(e) => set("street", e.target.value)} placeholder="House 123, Road 4, Block A" className={errors.street ? "border-red-400 focus-visible:ring-red-400" : ""} />
+                  {errors.street && <p className="text-xs text-red-500 mt-1">{errors.street}</p>}
+                </div>
                 <div>
                   <Label className="mb-1.5 block">City</Label>
-                  <Input value={form.city} onChange={(e) => set("city", e.target.value)} placeholder="Dhaka" />
-                  <p className="text-xs text-gray-400 mt-1">{form.city.trim() ? (inDhaka ? "Within Dhaka" : "Outside Dhaka") + ` — delivery ${formatBDT(deliveryCharge)}` : "Type your city to see the delivery charge"}</p>
+                  <Input value={form.city} onChange={(e) => set("city", e.target.value)} placeholder="Dhaka" className={errors.city ? "border-red-400 focus-visible:ring-red-400" : ""} />
+                  {errors.city ? <p className="text-xs text-red-500 mt-1">{errors.city}</p> : <p className="text-xs text-gray-400 mt-1">{form.city.trim() ? (inDhaka ? "Within Dhaka" : "Outside Dhaka") + ` — delivery ${formatBDT(deliveryCharge)}` : "Type your city to see the delivery charge"}</p>}
                 </div>
                 <div><Label className="mb-1.5 block">Postal Code <span className="text-gray-400 font-normal">(Optional)</span></Label><Input value={form.zip} onChange={(e) => set("zip", e.target.value)} placeholder="1216" /></div>
               </div>
@@ -260,15 +276,17 @@ export default function CheckoutPage() {
                   {enabledChannels.length > 0 && (
                     <>
                       <Label className="mb-2 block text-sm">Pay with</Label>
-                      <div className="flex flex-wrap gap-2 mb-4">
+                      <div className="flex flex-wrap gap-2 mb-1">
                         {enabledChannels.map((c) => (
-                          <button key={c} type="button" onClick={() => setChannel(c)}
+                          <button key={c} type="button" onClick={() => { setChannel(c); setErrors((e) => ({ ...e, channel: "" })); }}
                             className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors ${channel === c ? "border-primary bg-primary/5 font-medium" : "border-gray-200 hover:bg-gray-50"}`}>
                             <span className="w-5 h-5 rounded text-white flex items-center justify-center text-[10px] font-bold" style={{ background: CHANNEL_META[c].bg }}>{CHANNEL_META[c].letter}</span>
                             {CHANNEL_META[c].label}
                           </button>
                         ))}
                       </div>
+                      {errors.channel && <p className="text-xs text-red-500 mb-3">{errors.channel}</p>}
+                      <div className="mb-1" />
 
                       {/* Instructions */}
                       {channel && (
@@ -282,8 +300,16 @@ export default function CheckoutPage() {
                       )}
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div><Label className="mb-1.5 block">Transaction ID (TrxID)</Label><Input value={transactionId} onChange={(e) => setTransactionId(e.target.value.toUpperCase())} placeholder="e.g. 9AB3C2D1XY" /></div>
-                        <div><Label className="mb-1.5 block">Your {channel ? CHANNEL_META[channel].label : "wallet"} number</Label><Input value={senderNumber} onChange={(e) => setSenderNumber(e.target.value)} placeholder="01XXXXXXXXX" /></div>
+                        <div>
+                          <Label className="mb-1.5 block">Transaction ID (TrxID)</Label>
+                          <Input value={transactionId} onChange={(e) => { setTransactionId(e.target.value.toUpperCase()); setErrors((er) => ({ ...er, transactionId: "" })); }} placeholder="e.g. 9AB3C2D1XY" className={errors.transactionId ? "border-red-400 focus-visible:ring-red-400" : ""} />
+                          {errors.transactionId && <p className="text-xs text-red-500 mt-1">{errors.transactionId}</p>}
+                        </div>
+                        <div>
+                          <Label className="mb-1.5 block">Your {channel ? CHANNEL_META[channel].label : "wallet"} number</Label>
+                          <Input value={senderNumber} onChange={(e) => { setSenderNumber(e.target.value); setErrors((er) => ({ ...er, senderNumber: "" })); }} placeholder="01XXXXXXXXX" className={errors.senderNumber ? "border-red-400 focus-visible:ring-red-400" : ""} />
+                          {errors.senderNumber && <p className="text-xs text-red-500 mt-1">{errors.senderNumber}</p>}
+                        </div>
                       </div>
                     </>
                   )}

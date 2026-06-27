@@ -2,8 +2,18 @@ import { Link } from "wouter";
 import { FaFacebookF, FaWhatsapp } from "react-icons/fa";
 import { OWNER_WHATSAPP } from "@/lib/config";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
+import { useQuery } from "@tanstack/react-query";
+
+interface PolicyLink { slug: string; title: string }
+
 export function Footer() {
   const { data: settings } = useStoreSettings();
+  const { data: policyData } = useQuery<{ policies: PolicyLink[] }>({
+    queryKey: ["policies-footer"],
+    queryFn: async () => { const r = await fetch("/api/policies"); if (!r.ok) throw new Error("x"); return r.json(); },
+    staleTime: 1000 * 60 * 5,
+  });
+  const policies = policyData?.policies ?? [];
   const whatsapp = (settings?.contact.whatsapp || OWNER_WHATSAPP).replace(/\D/g, "");
   const email = settings?.contact.email || "support@myshaenterprise.com";
   const address = settings?.contact.address || "21 (Down Floor), Tota mia complex, Senpara Parbata, Mirpur-10, Dhaka-1216";
@@ -48,8 +58,10 @@ export function Footer() {
               <li><Link href="/about" className="hover:text-primary transition-colors">About Us</Link></li>
               <li><Link href="/contact" className="hover:text-primary transition-colors">Contact Us</Link></li>
               <li><Link href="/category/all" className="hover:text-primary transition-colors">All Products</Link></li>
-              <li><Link href="/wishlist" className="hover:text-primary transition-colors">My Wishlist</Link></li>
-              <li><Link href="/contact" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
+              <li><Link href="/track" className="hover:text-primary transition-colors">Track Order</Link></li>
+              {policies.map((p) => (
+                <li key={p.slug}><Link href={`/policy/${p.slug}`} className="hover:text-primary transition-colors">{p.title}</Link></li>
+              ))}
             </ul>
           </div>
           
