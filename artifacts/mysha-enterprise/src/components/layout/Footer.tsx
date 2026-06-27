@@ -134,6 +134,15 @@ export function Footer() {
           <p className="text-sm text-gray-500">
             Developed by{" "}
             <a
+              href="https://www.linkedin.com/in/farginanowar-b9a485324"
+              target="_blank"
+              rel="noreferrer"
+              className="text-primary font-medium hover:underline"
+            >
+              Fargin Binta Anowar
+            </a>
+            {" "}&amp;{" "}
+            <a
               href="https://www.linkedin.com/in/ibnomarromel/"
               target="_blank"
               rel="noreferrer"

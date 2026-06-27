@@ -5,46 +5,54 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { MapPin, Phone, Mail, Clock, CheckCircle2, MessageSquare, Headphones, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-
-const contactMethods = [
-  {
-    icon: <Phone size={22} />,
-    title: "Phone Support",
-    desc: "Talk directly with our team",
-    value: "+880 1234-567890",
-    sub: "Available 9AM – 9PM, 7 days",
-    href: "tel:+8801234567890",
-  },
-  {
-    icon: <MessageSquare size={22} />,
-    title: "WhatsApp",
-    desc: "Quick responses guaranteed",
-    value: "+880 1234-567890",
-    sub: "Typically replies within minutes",
-    href: "https://wa.me/8801234567890",
-  },
-  {
-    icon: <Mail size={22} />,
-    title: "Email Support",
-    desc: "For detailed inquiries",
-    value: "support@myshaenterprise.com",
-    sub: "Response within 24 hours",
-    href: "mailto:support@myshaenterprise.com",
-  },
-  {
-    icon: <Headphones size={22} />,
-    title: "Live Chat",
-    desc: "Chat with us on the website",
-    value: "Start Live Chat",
-    sub: "Available during business hours",
-    href: "#",
-  },
-];
+import { useStoreSettings } from "@/hooks/useStoreSettings";
 
 export default function ContactPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", phone: "", subject: "", message: "" });
+
+  const { data: settings } = useStoreSettings();
+  const whatsapp = (settings?.contact.whatsapp || "8801633800157").replace(/\D/g, "");
+  const email = settings?.contact.email || "support@myshaenterprise.com";
+  const address = settings?.contact.address || "Senpara Parbata, Mirpur-10, Dhaka-1216, Bangladesh";
+  const phoneDisplay = "+" + whatsapp;
+  const contactIntro = settings?.content?.contactUs?.trim();
+
+  const contactMethods = [
+    {
+      icon: <Phone size={22} />,
+      title: "Phone Support",
+      desc: "Talk directly with our team",
+      value: phoneDisplay,
+      sub: "Available 9AM – 9PM, 7 days",
+      href: `tel:+${whatsapp}`,
+    },
+    {
+      icon: <MessageSquare size={22} />,
+      title: "WhatsApp",
+      desc: "Quick responses guaranteed",
+      value: phoneDisplay,
+      sub: "Typically replies within minutes",
+      href: `https://wa.me/${whatsapp}`,
+    },
+    {
+      icon: <Mail size={22} />,
+      title: "Email Support",
+      desc: "For detailed inquiries",
+      value: email,
+      sub: "Response within 24 hours",
+      href: `mailto:${email}`,
+    },
+    {
+      icon: <Headphones size={22} />,
+      title: "Live Chat",
+      desc: "Chat with us on WhatsApp",
+      value: "Start a Chat",
+      sub: "Available during business hours",
+      href: `https://wa.me/${whatsapp}`,
+    },
+  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,7 +83,7 @@ export default function ContactPage() {
             Support
           </div>
           <h1 className="text-4xl md:text-5xl font-bold mb-4">Get in Touch</h1>
-          <p className="text-gray-400 text-lg">We're here to help. Reach out through any channel below and our team will get back to you promptly.</p>
+          <p className="text-gray-400 text-lg whitespace-pre-line">{contactIntro || "We're here to help. Reach out through any channel below and our team will get back to you promptly."}</p>
         </div>
       </section>
 
@@ -167,14 +175,8 @@ export default function ContactPage() {
               <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2"><MapPin size={18} className="text-primary" /> Our Location</h3>
               <div className="space-y-3 text-sm text-gray-600">
                 <div>
-                  <p className="font-semibold text-gray-900">Dhaka Showroom (Main)</p>
-                  <p>123 Tech Avenue, Bashundhara City</p>
-                  <p>Dhaka 1212, Bangladesh</p>
-                </div>
-                <div className="pt-3 border-t">
-                  <p className="font-semibold text-gray-900">Chittagong Branch</p>
-                  <p>45 Electronics Market, Agrabad</p>
-                  <p>Chittagong 4100, Bangladesh</p>
+                  <p className="font-semibold text-gray-900">Mysha Enterprise</p>
+                  <p className="whitespace-pre-line">{address}</p>
                 </div>
               </div>
             </div>
@@ -202,7 +204,7 @@ export default function ContactPage() {
             <div className="bg-primary/5 border border-primary/20 rounded-xl p-5">
               <h3 className="font-bold text-gray-900 mb-2">Fast Track Support</h3>
               <p className="text-sm text-gray-600 mb-4">For urgent issues, WhatsApp us directly for the fastest response.</p>
-              <a href="https://wa.me/8801234567890" className="flex items-center justify-center gap-2 w-full bg-[#25d366] text-white rounded-lg py-2.5 text-sm font-semibold hover:bg-[#22c55e] transition-colors">
+              <a href={`https://wa.me/${whatsapp}`} className="flex items-center justify-center gap-2 w-full bg-[#25d366] text-white rounded-lg py-2.5 text-sm font-semibold hover:bg-[#22c55e] transition-colors">
                 <MessageSquare size={16} /> WhatsApp Us Now
               </a>
             </div>

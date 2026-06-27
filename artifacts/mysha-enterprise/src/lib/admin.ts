@@ -178,6 +178,8 @@ export interface AdminSettings {
   facebook: string;
   instagram: string;
   youtube: string;
+  aboutUs: string;
+  contactUs: string;
 }
 
 export const ADMIN_PERMISSIONS = ["products", "orders", "reviews", "flash_sale", "policies", "settings", "import"] as const;

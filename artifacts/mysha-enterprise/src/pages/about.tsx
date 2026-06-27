@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { ShieldCheck, Truck, Star, Users, Award, HeadphonesIcon, MapPin, Phone, Mail } from "lucide-react";
 
 const stats = [
@@ -24,6 +25,8 @@ const values = [
 ];
 
 export default function AboutPage() {
+  const { data: settings } = useStoreSettings();
+  const aboutText = settings?.content?.aboutUs?.trim();
   return (
     <div className="bg-white">
       {/* Hero */}
@@ -71,12 +74,18 @@ export default function AboutPage() {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-6">Our Mission</h2>
-              <p className="text-gray-600 leading-relaxed mb-4">
-                We believe everyone in Bangladesh deserves access to the latest technology at fair prices. Our mission is to bridge the gap between global tech brands and Bangladeshi consumers — with authenticity, speed, and exceptional service.
-              </p>
-              <p className="text-gray-600 leading-relaxed mb-8">
-                From Apple to Samsung, Dyson to Sony — we are an authorized retailer for all major brands, ensuring you always get genuine products with full warranty support.
-              </p>
+              {aboutText ? (
+                <p className="text-gray-600 leading-relaxed mb-8 whitespace-pre-line">{aboutText}</p>
+              ) : (
+                <>
+                  <p className="text-gray-600 leading-relaxed mb-4">
+                    We believe everyone in Bangladesh deserves access to the latest technology at fair prices. Our mission is to bridge the gap between global tech brands and Bangladeshi consumers — with authenticity, speed, and exceptional service.
+                  </p>
+                  <p className="text-gray-600 leading-relaxed mb-8">
+                    From Apple to Samsung, Dyson to Sony — we are an authorized retailer for all major brands, ensuring you always get genuine products with full warranty support.
+                  </p>
+                </>
+              )}
               <Link href="/category/all">
                 <Button className="px-8">Shop Now</Button>
               </Link>

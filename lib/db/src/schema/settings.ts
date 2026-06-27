@@ -38,6 +38,9 @@ export const storeSettingsTable = pgTable("store_settings", {
   facebook: text("facebook").default("https://www.facebook.com/share/1aMHmy474e/?mibextid=wwXIfr"),
   instagram: text("instagram").default(""),
   youtube: text("youtube").default(""),
+  // Admin-editable page content (supports English + Bengali). Empty = use defaults.
+  aboutUs: text("about_us").default(""),
+  contactUs: text("contact_us").default(""),
   // Sender ID/number used for outgoing SMS (order confirmed / payment verified).
   smsSenderId: text("sms_sender_id").default(""),
   // Current flash sale configuration.

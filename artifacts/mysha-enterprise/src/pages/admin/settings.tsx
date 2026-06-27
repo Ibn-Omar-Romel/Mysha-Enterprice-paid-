@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { AdminGuard } from "./guard";
 import { AdminNav } from "./nav";
 import { toast } from "sonner";
-import { Settings as SettingsIcon, Save, Truck, Wallet, Phone, Share2 } from "lucide-react";
+import { Settings as SettingsIcon, Save, Truck, Wallet, Phone, Share2, FileText } from "lucide-react";
 import { FaFacebookF, FaInstagram, FaYoutube } from "react-icons/fa";
 
 const WALLETS: { key: keyof Omit<PaymentsConfig, "cod">; label: string; bg: string }[] = [
@@ -141,6 +141,20 @@ function SettingsInner() {
               <div>
                 <Label className="mb-1.5 flex items-center gap-2"><FaYoutube className="text-[#ff0000]" /> YouTube link</Label>
                 <Input value={form.youtube ?? ""} onChange={(e) => setForm({ ...form, youtube: e.target.value })} placeholder="https://youtube.com/@yourchannel" />
+              </div>
+            </div>
+          </Section>
+
+          <Section title="Page Content" desc="Edit the About Us and Contact Us page text. Supports English and Bengali. Leave blank to keep the default page." icon={<FileText size={18} />}>
+            <div className="space-y-4">
+              <div>
+                <Label className="mb-1.5 block">About Us</Label>
+                <Textarea rows={6} value={form.aboutUs ?? ""} onChange={(e) => setForm({ ...form, aboutUs: e.target.value })} placeholder="Write your About Us text here (English or Bengali)…" />
+              </div>
+              <div>
+                <Label className="mb-1.5 block">Contact Us</Label>
+                <Textarea rows={5} value={form.contactUs ?? ""} onChange={(e) => setForm({ ...form, contactUs: e.target.value })} placeholder="Intro text shown on the Contact page (English or Bengali)…" />
+                <p className="text-xs text-gray-400 mt-1">Phone, email and address on the Contact page come from the Contact Information section above.</p>
               </div>
             </div>
           </Section>

@@ -29,6 +29,9 @@ export async function ensureSchema(): Promise<void> {
     await db.execute(sql`ALTER TABLE store_settings ADD COLUMN IF NOT EXISTS facebook text DEFAULT 'https://www.facebook.com/share/1aMHmy474e/?mibextid=wwXIfr';`);
     await db.execute(sql`ALTER TABLE store_settings ADD COLUMN IF NOT EXISTS instagram text DEFAULT '';`);
     await db.execute(sql`ALTER TABLE store_settings ADD COLUMN IF NOT EXISTS youtube text DEFAULT '';`);
+    // Admin-editable About Us / Contact Us page content.
+    await db.execute(sql`ALTER TABLE store_settings ADD COLUMN IF NOT EXISTS about_us text DEFAULT '';`);
+    await db.execute(sql`ALTER TABLE store_settings ADD COLUMN IF NOT EXISTS contact_us text DEFAULT '';`);
 
     // Cart line variant selection (color / storage), shown to the admin on orders.
     await db.execute(sql`ALTER TABLE cart_items ADD COLUMN IF NOT EXISTS color text;`);

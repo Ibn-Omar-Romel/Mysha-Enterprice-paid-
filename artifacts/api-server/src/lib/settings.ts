@@ -52,6 +52,10 @@ export function publicSettings(s: StoreSettings) {
       instagram: s.instagram ?? "",
       youtube: s.youtube ?? "",
     },
+    content: {
+      aboutUs: s.aboutUs ?? "",
+      contactUs: s.contactUs ?? "",
+    },
   };
 }
 

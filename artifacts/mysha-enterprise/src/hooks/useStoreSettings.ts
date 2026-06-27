@@ -11,6 +11,7 @@ export interface PublicSettings {
   };
   contact: { whatsapp: string; email: string; address: string };
   social: { facebook: string; instagram: string; youtube: string };
+  content: { aboutUs: string; contactUs: string };
 }
 
 /** Public, store-wide settings (COD charges, enabled payment methods, contact). */

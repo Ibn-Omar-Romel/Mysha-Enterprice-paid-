@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AdminGuard } from "./guard";
 import { toast } from "sonner";
 import { ArrowLeft, Plus, Trash2, Save, Image as ImageIcon, GripVertical } from "lucide-react";
@@ -59,6 +58,16 @@ function FormInner() {
     specifications: DEFAULT_SPEC_LABELS.map((label) => ({ label, value: "" })),
   }));
   const [saving, setSaving] = useState(false);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+
+  // Reorder a spec row (drag-and-drop).
+  const moveSpec = (from: number, to: number) =>
+    setForm((f) => {
+      const arr = [...(f.specifications ?? [])];
+      const [moved] = arr.splice(from, 1);
+      arr.splice(to, 0, moved);
+      return { ...f, specifications: arr };
+    });
 
   const { data: existing, isLoading } = useQuery({
     queryKey: ["admin-product", editingId],
@@ -207,16 +216,16 @@ function FormInner() {
               <Input className={inputCls} value={form.model} onChange={(e) => set("model", e.target.value)} placeholder="Pixel 9 Pro XL" />
             </Field>
             <Field label="Category" required hint="Pick the category this product belongs to">
-              <Select value={form.category || undefined} onValueChange={(v) => set("category", v)}>
-                <SelectTrigger className={inputCls}>
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {CATEGORY_OPTIONS.map((c) => (
-                    <SelectItem key={c.slug} value={c.slug}>{c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <select
+                value={form.category}
+                onChange={(e) => set("category", e.target.value)}
+                className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              >
+                <option value="" disabled>Select a category</option>
+                {CATEGORY_OPTIONS.map((c) => (
+                  <option key={c.slug} value={c.slug}>{c.name}</option>
+                ))}
+              </select>
             </Field>
             <Field label="Product Code / SKU" hint='Shown next to availability, e.g. "1-15"'>
               <Input className={inputCls} value={form.code} onChange={(e) => set("code", e.target.value)} placeholder="1-15" />
@@ -336,8 +345,23 @@ function FormInner() {
           </div>
           <div className="space-y-2">
             {(form.specifications ?? []).map((s, i) => (
-              <div key={i} className="grid grid-cols-12 gap-2 items-start">
-                <GripVertical size={16} className="col-span-1 text-gray-300 mt-2.5 hidden sm:block" />
+              <div
+                key={i}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={() => { if (dragIdx !== null && dragIdx !== i) moveSpec(dragIdx, i); setDragIdx(null); }}
+                className={`grid grid-cols-12 gap-2 items-start rounded-lg transition-colors ${dragIdx === i ? "opacity-40" : ""}`}
+              >
+                <button
+                  type="button"
+                  draggable
+                  onDragStart={() => setDragIdx(i)}
+                  onDragEnd={() => setDragIdx(null)}
+                  className="col-span-1 hidden sm:flex items-center justify-center text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing mt-2"
+                  title="Drag to reorder"
+                  aria-label="Drag to reorder"
+                >
+                  <GripVertical size={16} />
+                </button>
                 <Input className={inputCls + " col-span-12 sm:col-span-4"} value={s.label} onChange={(e) => updateSpec(i, { label: e.target.value })} placeholder="Chipset" />
                 <Textarea className={inputCls + " col-span-10 sm:col-span-6 resize-none min-h-[40px]"} rows={1} value={s.value} onChange={(e) => updateSpec(i, { value: e.target.value })} placeholder="Google Tensor G4 (4 nm)" />
                 <Button type="button" variant="ghost" size="sm" className="col-span-2 sm:col-span-1 h-9 w-9 p-0 text-gray-400 hover:text-red-600" onClick={() => removeSpec(i)}><Trash2 size={15} /></Button>

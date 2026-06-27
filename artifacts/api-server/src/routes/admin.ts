@@ -438,6 +438,8 @@ const settingsSchema = z.object({
   facebook: z.string().trim().max(300).optional().or(z.literal("")),
   instagram: z.string().trim().max(300).optional().or(z.literal("")),
   youtube: z.string().trim().max(300).optional().or(z.literal("")),
+  aboutUs: z.string().max(20000).optional().or(z.literal("")),
+  contactUs: z.string().max(20000).optional().or(z.literal("")),
 });
 
 // ─── GET /api/admin/settings ──────────────────────────────────────────────────
@@ -455,6 +457,8 @@ router.get("/admin/settings", requirePermission("settings"), async (_req: Reques
       facebook: s.facebook ?? "",
       instagram: s.instagram ?? "",
       youtube: s.youtube ?? "",
+      aboutUs: s.aboutUs ?? "",
+      contactUs: s.contactUs ?? "",
     });
   } catch (err: any) {
     console.error("[GET /api/admin/settings]", err?.message ?? err);
@@ -483,6 +487,8 @@ router.put("/admin/settings", requirePermission("settings"), validateBody(settin
       facebook: body.facebook ?? "",
       instagram: body.instagram ?? "",
       youtube: body.youtube ?? "",
+      aboutUs: body.aboutUs ?? "",
+      contactUs: body.contactUs ?? "",
       updatedAt: new Date(),
     }).where(eq(storeSettingsTable.id, 1));
     res.json({ ok: true });
